@@ -1,0 +1,280 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[92vh] shadow-2xl overflow-hidden transition-colors flex flex-col my-auto">
+    <!-- Header (Sticky top) -->
+    <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/60 flex-shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <app-icon name="brain" class="w-5 h-5"></app-icon>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <span>Simulador de Exámenes con IA</span>
+            <span class="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+              Quiz Master
+            </span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Genera simulacros interactivos personalizados y detecta puntos débiles
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Scrollable content wrapper -->
+    <div class="flex-1 overflow-y-auto">
+      <!-- Mode 1: Configuration Setup -->
+      @if (!isRunning() && !isFinished()) {
+      <div class="p-6 space-y-6">
+        <!-- Course Selection -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+            1. Selecciona la Materia o Asignatura
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            @for (course of state.courses(); track course.id) {
+              <button
+                type="button"
+                (click)="selectedCourseId.set(course.id)"
+                class="p-3 rounded-2xl border text-left flex items-center space-x-3 transition cursor-pointer"
+                [ngClass]="selectedCourseId() === course.id
+                  ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-400 text-indigo-950 dark:text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+              >
+                <span class="w-3 h-3 rounded-full flex-shrink-0" [style.backgroundColor]="course.color"></span>
+                <div class="truncate">
+                  <div class="text-xs font-bold truncate">{{ course.name }}</div>
+                  <div class="text-[10px] font-mono text-slate-400">{{ course.code }}</div>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Difficulty & Question Count -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              2. Nivel de Dificultad
+            </label>
+            <select
+              [ngModel]="difficulty()"
+              (ngModelChange)="difficulty.set($event)"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-indigo-500"
+            >
+              <option value="baja">🌱 Básico / Repaso Conceptual</option>
+              <option value="media">⚡ Intermedio / Tipo Práctica Calificada</option>
+              <option value="alta">🔥 Avanzado / Tipo Examen Parcial o Final</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              3. Número de Preguntas
+            </label>
+            <div class="flex space-x-2">
+              @for (n of [3, 5, 8]; track n) {
+                <button
+                  type="button"
+                  (click)="questionCount.set(n)"
+                  class="flex-1 py-2 rounded-xl text-xs font-bold border transition"
+                  [ngClass]="questionCount() === n
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'"
+                >
+                  {{ n }} preguntas
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-2">
+          <button
+            (click)="generateExam()"
+            [disabled]="isGenerating()"
+            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-sm shadow-md flex items-center justify-center space-x-2 transition transform active:scale-95 disabled:opacity-50"
+          >
+            @if (isGenerating()) {
+              <app-icon name="sparkles" class="w-4 h-4 text-amber-300 animate-spin-slow"></app-icon>
+              <span>Generando preguntas con IA...</span>
+            } @else {
+              <app-icon name="play" class="w-4 h-4"></app-icon>
+              <span>Iniciar Simulacro de Examen</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Mode 2: Live Exam Running -->
+    @if (isRunning()) {
+      <div class="p-6 space-y-6">
+        <!-- Progress Bar & Timer -->
+        <div class="flex items-center justify-between text-xs pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-900 dark:text-white">
+              Pregunta {{ currentQuestionIndex() + 1 }} de {{ questions().length }}
+            </span>
+            @if (currentQuestion(); as cq) {
+              @if (cq.topicTag; as tag) {
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono text-[10px]">
+                  {{ tag }}
+                </span>
+              }
+            }
+          </div>
+
+          <div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-mono font-bold text-xs">
+            <app-icon name="clock" class="w-3.5 h-3.5 animate-pulse"></app-icon>
+            <span>{{ timeFormatted() }}</span>
+          </div>
+        </div>
+
+        <!-- Question Body -->
+        @if (currentQuestion(); as q) {
+          <div class="space-y-4">
+            <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-relaxed">
+              {{ q.question }}
+            </h4>
+
+            <div class="space-y-2.5">
+              @for (opt of q.options; track opt.id) {
+                <div
+                  (click)="selectOption(q.id, opt.id)"
+                  class="p-3.5 rounded-2xl border text-xs font-medium cursor-pointer transition flex items-start space-x-3 select-none"
+                  [ngClass]="selectedAnswers()[q.id] === opt.id
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-950 dark:text-white shadow-xs font-bold'
+                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                >
+                  <div
+                    class="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 transition"
+                    [ngClass]="selectedAnswers()[q.id] === opt.id
+                      ? 'border-indigo-600 bg-indigo-600 text-white'
+                      : 'border-slate-300 dark:border-slate-600'"
+                  >
+                    @if (selectedAnswers()[q.id] === opt.id) {
+                      <div class="w-2 h-2 rounded-full bg-white"></div>
+                    }
+                  </div>
+                  <span class="leading-snug">{{ opt.text }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Navigation Buttons -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button
+            (click)="prevQuestion()"
+            [disabled]="currentQuestionIndex() === 0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition"
+          >
+            ← Anterior
+          </button>
+
+          @if (currentQuestionIndex() < questions().length - 1) {
+            <button
+              (click)="nextQuestion()"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+            >
+              Siguiente →
+            </button>
+          } @else {
+            <button
+              (click)="submitExam()"
+              class="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition transform active:scale-95"
+            >
+              ✓ Entregar Examen
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Mode 3: Exam Results & AI Feedback -->
+    @if (isFinished()) {
+      <div class="p-6 space-y-6">
+        <!-- Score Banner -->
+        <div class="p-6 rounded-3xl text-center space-y-2"
+             [ngClass]="finalScore() >= 14
+               ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
+               : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-100'">
+          <div class="text-xs uppercase font-extrabold tracking-widest opacity-80">
+            Resultado del Simulacro
+          </div>
+          <div class="text-5xl font-black font-mono">
+            {{ finalScore() }} <span class="text-2xl font-bold opacity-60">/ 20</span>
+          </div>
+          <p class="text-xs font-medium max-w-md mx-auto">
+            @if (finalScore() >= 17) {
+              🎉 ¡Excelente dominio temático! Estás preparado para el examen oficial.
+            } @else if (finalScore() >= 14) {
+              👍 Buen rendimiento. Tienes la base aprobada pero puedes reforzar algunos puntos clave.
+            } @else {
+              ⚠️ Se detectaron brechas conceptuales. Te sugerimos agendar un bloque de estudio de refuerzo.
+            }
+          </p>
+        </div>
+
+        <!-- Answers Breakdown with Explanations -->
+        <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
+          <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Revisión Pedagógica por Pregunta
+          </h5>
+          @for (q of questions(); track q.id; let i = $index) {
+            @let userAns = selectedAnswers()[q.id];
+            @let correctOpt = q.options.find(isOptionCorrect);
+            @let isUserCorrect = userAns === correctOpt?.id;
+
+            <div class="p-3.5 rounded-2xl border text-xs space-y-2 transition"
+                 [ngClass]="isUserCorrect
+                   ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60'
+                   : 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60'">
+              <div class="flex items-start justify-between gap-2">
+                <span class="font-bold text-slate-900 dark:text-white">
+                  {{ i + 1 }}. {{ q.question }}
+                </span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                      [ngClass]="isUserCorrect ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200'">
+                  {{ isUserCorrect ? '✓ Correcto' : '✗ Incorrecto' }}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-600 dark:text-slate-300 italic bg-white/60 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                💡 <strong>Explicación:</strong> {{ q.explanation }}
+              </p>
+            </div>
+          }
+        </div>
+
+        <!-- Action Footer -->
+        <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          @if (weakTopics().length > 0) {
+            <button
+              (click)="createReinforcementStudyBlock()"
+              class="w-full sm:w-auto flex-1 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition"
+            >
+              <app-icon name="calendar" class="w-4 h-4"></app-icon>
+              <span>Agendar Bloque de Refuerzo en Horario</span>
+            </button>
+          }
+
+          <button
+            (click)="generateExam()"
+            class="w-full sm:w-auto py-3 px-5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition"
+          >
+            Nuevo Simulacro
+          </button>
+        </div>
+      </div>
+    }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,238 @@
+<div class="space-y-6 pb-12">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+    <div>
+      <div class="flex items-center space-x-2">
+        <app-icon name="bar-chart-3" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+          Panel Analítico & Diagnóstico de Rendimiento
+        </h2>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        Visualiza tu constancia semanal, distribución por materias y recibe coaching personalizado.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <button
+        (click)="state.isCognitiveAdaptationOpen.set(true)"
+        class="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+        title="Adaptar tareas de alta exigencia a tus picos matutinos de energía"
+      >
+        <app-icon name="brain" class="w-4 h-4 text-white"></app-icon>
+        <span>Picos Cognitivos & Rutinas</span>
+      </button>
+
+      <button
+        (click)="handleGenerateCoachReport()"
+        [disabled]="isLoadingCoach()"
+        class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95 disabled:opacity-50"
+      >
+        <app-icon name="sparkles" class="w-4 h-4 text-amber-300"></app-icon>
+        <span>{{ isLoadingCoach() ? 'Analizando Métricas...' : 'Diagnóstico Coach IA' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 4 Score Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Score 1 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Puntuación de Rendimiento
+      </span>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{{ productivityScore() }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">/ 100 pts</span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">
+        {{ productivityScore() >= 80 ? '🔥 Nivel Élite' : productivityScore() >= 60 ? '✨ Nivel Óptimo' : '📈 En Crecimiento' }}
+      </p>
+    </div>
+
+    <!-- Score 2 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Horas Totales Registradas
+      </span>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ totalHours() }}h</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">({{ state.focusSessions().length }} sesiones)</span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+        Meta semanal: {{ ((state.preferences().targetDailyHours || 3.5) * 6).toFixed(0) }} horas
+      </p>
+    </div>
+
+    <!-- Score 3 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Tasa de Cumplimiento
+      </span>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ completionRate() }}%</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">
+          ({{ completedTasksCount() }}/{{ state.tasks().length }})
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">Entregas y tareas resueltas</p>
+    </div>
+
+    <!-- Score 4 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Racha de Días
+      </span>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-3xl font-extrabold text-amber-500">{{ state.preferences().studyStreakDays || 0 }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">días activos</span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">¡La consistencia vence al talento!</p>
+    </div>
+  </div>
+
+  <!-- AI Coach Diagnostic Card if available -->
+  @if (aiCoachReport(); as coach) {
+    <div class="bg-indigo-50/50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 rounded-3xl p-6 shadow-xs space-y-4 animate-in fade-in duration-200 transition-colors">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-xs">
+            <app-icon name="brain" class="w-5 h-5"></app-icon>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+              {{ coach.performanceBadge }}
+            </span>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white mt-1">
+              {{ coach.diagnosticTitle }}
+            </h3>
+          </div>
+        </div>
+        <button
+          (click)="closeReport()"
+          class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{{ coach.analysis }}</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 shadow-2xs">
+          <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
+            💪 Fortaleza Demostrada:
+          </span>
+          <p class="text-xs text-slate-700 dark:text-slate-300 mt-1">{{ coach.strengthIdentified }}</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 shadow-2xs">
+          <span class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider block">
+            🎯 Área de Mejora Clave:
+          </span>
+          <p class="text-xs text-slate-700 dark:text-slate-300 mt-1">{{ coach.areaToImprove }}</p>
+        </div>
+      </div>
+
+      @if (coach.actionableSteps && coach.actionableSteps.length > 0) {
+        <div class="space-y-2 pt-2">
+          <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+            Plan de Acción Inmediato:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            @for (step of coach.actionableSteps; track $index) {
+              <div class="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 text-xs text-slate-700 dark:text-slate-300 flex items-start space-x-2 shadow-2xs">
+                <span class="w-4 h-4 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {{ $index + 1 }}
+                </span>
+                <span>{{ step }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (coach.motivationalQuote) {
+        <p class="text-xs text-indigo-700 dark:text-indigo-300 italic text-center pt-2 border-t border-indigo-200 dark:border-indigo-900/60">
+          "{{ coach.motivationalQuote }}"
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Main Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Chart 1: Daily Study Hours -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          Horas de Estudio por Día (Esta Semana)
+        </h3>
+        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Minutos / Día</span>
+      </div>
+
+      <!-- Bar Chart Visual -->
+      <div class="h-56 flex items-end justify-between gap-3 pt-6 pb-2 px-2">
+        @for (day of weekDaysOrdered; track day) {
+          @let heightPercent = getDayHeightPercent(day);
+          @let hours = getDayHours(day);
+
+          <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+            <span class="text-[10px] font-mono text-slate-500 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition">
+              {{ hours }}h
+            </span>
+            <div class="w-full bg-slate-100 dark:bg-slate-800/80 rounded-xl h-36 flex items-end p-1">
+              <div
+                class="w-full bg-indigo-600 dark:bg-indigo-500 rounded-lg transition-all duration-500 group-hover:bg-indigo-500 dark:group-hover:bg-indigo-400 shadow-xs"
+                [style.height.%]="heightPercent"
+              ></div>
+            </div>
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ day }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Chart 2: Time Breakdown by Subject -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          Distribución por Materia / Curso
+        </h3>
+        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{{ subjectBreakdown().length }} Materias</span>
+      </div>
+
+      <div class="space-y-3.5 pt-2">
+        @if (subjectBreakdown().length === 0) {
+          <p class="text-xs text-slate-400 dark:text-slate-500 italic py-6 text-center">
+            Aún no hay sesiones registradas por materias.
+          </p>
+        } @else {
+          @for (item of subjectBreakdown(); track item.courseId) {
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full"
+                    [style.backgroundColor]="item.color"
+                  ></span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200">{{ item.name }}</span>
+                </div>
+                <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                  {{ item.hours }}h ({{ item.percentage }}%)
+                </span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2.5 overflow-hidden">
+                <div
+                  class="h-2.5 rounded-full transition-all duration-500"
+                  [style.width.%]="item.percentage"
+                  [style.backgroundColor]="item.color"
+                ></div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>
+

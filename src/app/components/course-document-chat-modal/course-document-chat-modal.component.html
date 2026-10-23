@@ -1,0 +1,165 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl h-[650px] shadow-2xl overflow-hidden transition-colors flex flex-col my-8">
+    <!-- Header -->
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40 flex-shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <app-icon name="sparkles" class="w-5 h-5"></app-icon>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <span>Chat con Sílabos & PDFs de Cursos</span>
+            <span class="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+              Document AI
+            </span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Consulta dudas, temarios, rúbricas y sincroniza fechas clave a tu horario
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button
+          (click)="handleSimulateUpload()"
+          [disabled]="isUploading()"
+          class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition flex items-center space-x-1.5"
+        >
+          <app-icon name="plus" class="w-3.5 h-3.5"></app-icon>
+          <span>{{ isUploading() ? 'Subiendo...' : 'Subir PDF' }}</span>
+        </button>
+        <button
+          (click)="close()"
+          class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Body Layout (Left: Doc Selector & Info | Right: Chat Messages) -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <!-- Left Panel: Documents List & Key Dates -->
+      <div class="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 p-4 space-y-4 bg-slate-50/40 dark:bg-slate-950/40 overflow-y-auto flex-shrink-0">
+        <div>
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-2">
+            Documentos Disponibles ({{ state.courseDocuments().length }})
+          </label>
+          <div class="space-y-2">
+            @for (doc of state.courseDocuments(); track doc.id) {
+              <div
+                (click)="selectDoc(doc.id)"
+                class="p-3 rounded-2xl border text-xs cursor-pointer transition"
+                [ngClass]="selectedDocId() === doc.id
+                  ? 'bg-white dark:bg-slate-800 border-indigo-500 shadow-xs'
+                  : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'"
+              >
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">📄</span>
+                  <div class="truncate font-bold text-slate-900 dark:text-white">
+                    {{ doc.fileName }}
+                  </div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1 flex justify-between">
+                  <span>{{ doc.courseName }}</span>
+                  <span class="font-mono">{{ doc.fileSize }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (activeDoc(); as doc) {
+          <!-- Extracted Key Dates Action Box -->
+          <div class="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 space-y-2.5 text-xs">
+            <div class="font-bold text-indigo-950 dark:text-indigo-200 flex items-center justify-between">
+              <span>Fechas del Sílabo</span>
+              <span class="text-[10px] font-mono opacity-70">{{ doc.keyDates.length }} hitos</span>
+            </div>
+            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+              @for (kd of doc.keyDates; track kd.title) {
+                <div class="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/60 text-[11px] flex justify-between items-center">
+                  <span class="truncate font-medium text-slate-800 dark:text-slate-200">{{ kd.title }}</span>
+                  <span class="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 font-bold flex-shrink-0 ml-1">{{ kd.date }}</span>
+                </div>
+              }
+            </div>
+            <button
+              (click)="handleImportDates()"
+              class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shadow-2xs transition flex items-center justify-center space-x-1.5"
+            >
+              <app-icon name="calendar" class="w-3.5 h-3.5"></app-icon>
+              <span>Importar a Calendario</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Right Panel: Interactive AI Chat Stream -->
+      <div class="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900">
+        <!-- Messages Area -->
+        <div class="flex-1 p-4 overflow-y-auto space-y-4">
+          @for (msg of messages(); track msg.id) {
+            <div class="flex items-start space-x-3"
+                 [ngClass]="msg.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs shadow-xs"
+                   [ngClass]="msg.sender === 'user' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'">
+                {{ msg.sender === 'user' ? 'Tú' : '🤖' }}
+              </div>
+
+              <div class="max-w-lg p-3.5 rounded-2xl text-xs space-y-1"
+                   [ngClass]="msg.sender === 'user'
+                     ? 'bg-indigo-600 text-white rounded-tr-xs'
+                     : 'bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-xs'">
+                <p class="whitespace-pre-line leading-relaxed">{{ msg.text }}</p>
+                @if (msg.referencedPages) {
+                  <span class="block text-[10px] opacity-75 font-mono pt-1">
+                    📖 Fuente: {{ msg.referencedPages }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (isThinking()) {
+            <div class="flex items-center space-x-2 text-xs text-slate-400 p-2 italic">
+              <app-icon name="sparkles" class="w-4 h-4 text-indigo-500 animate-spin-slow"></app-icon>
+              <span>Consultando contenido del documento...</span>
+            </div>
+          }
+        </div>
+
+        <!-- Suggested Prompt Chips -->
+        <div class="px-4 py-2 border-t border-slate-100 dark:border-slate-800 flex items-center space-x-2 overflow-x-auto no-scrollbar bg-slate-50/50 dark:bg-slate-950/30">
+          <span class="text-[10px] text-slate-400 font-bold uppercase flex-shrink-0">Sugerencias:</span>
+          @for (prompt of suggestedPrompts; track prompt) {
+            <button
+              (click)="sendQuery(prompt)"
+              class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-[11px] whitespace-nowrap transition"
+            >
+              {{ prompt }}
+            </button>
+          }
+        </div>
+
+        <!-- Input Bar -->
+        <div class="p-3 border-t border-slate-200 dark:border-slate-800 flex items-center space-x-2 bg-white dark:bg-slate-900">
+          <input
+            type="text"
+            [ngModel]="inputQuery()"
+            (ngModelChange)="inputQuery.set($event)"
+            (keydown.enter)="sendQuery()"
+            placeholder="Pregunta algo sobre el sílabo o documento..."
+            class="flex-1 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-xs font-medium focus:outline-none focus:border-indigo-500"
+          />
+          <button
+            (click)="sendQuery()"
+            [disabled]="!inputQuery().trim()"
+            class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs shadow-xs transition"
+          >
+            Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

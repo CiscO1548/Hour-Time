@@ -1,0 +1,173 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[92vh] shadow-2xl overflow-hidden transition-colors flex flex-col my-auto">
+    <!-- Header (Sticky top) -->
+    <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/60 flex-shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 text-lg shadow-2xs">
+          🎙️
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <span>Notas de Voz & Transcriptor Inteligente</span>
+            <span class="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+              Voice AI
+            </span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Graba explicaciones de clase, extrae puntos clave, fórmulas y genera flashcards
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Scrollable Body Content -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+      <!-- Recording Section (Compact & Sleek) -->
+      <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center space-y-3 relative overflow-hidden">
+        <div class="flex items-center justify-center space-x-3 flex-wrap gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Asignar a:</label>
+          <select
+            [ngModel]="selectedCourseId()"
+            (ngModelChange)="selectedCourseId.set($event)"
+            [disabled]="isRecording()"
+            class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none"
+          >
+            @for (c of state.courses(); track c.id) {
+              <option [value]="c.id">{{ c.name }} ({{ c.code }})</option>
+            }
+          </select>
+        </div>
+
+        <!-- Mic Record Button & Wave Animation -->
+        <div class="relative flex items-center justify-center py-2">
+          @if (isRecording()) {
+            <div class="absolute w-24 h-24 rounded-full bg-rose-500/20 animate-ping pointer-events-none"></div>
+            <div class="absolute w-20 h-20 rounded-full bg-rose-500/30 animate-pulse pointer-events-none"></div>
+          }
+
+          <button
+            (click)="toggleRecording()"
+            class="w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-lg transition transform active:scale-95 relative z-10"
+            [ngClass]="isRecording()
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/50 ring-4 ring-rose-300 dark:ring-rose-900'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/40'"
+          >
+            {{ isRecording() ? '⏹' : '🎙️' }}
+          </button>
+        </div>
+
+        <!-- Timer / Status -->
+        <div class="font-mono text-xs font-bold"
+             [ngClass]="isRecording() ? 'text-rose-600 animate-pulse' : 'text-slate-500'">
+          {{ isRecording() ? '● GRABANDO EN VIVO: ' + timeFormatted() : 'Presiona el micrófono para iniciar grabación' }}
+        </div>
+
+        @if (isProcessing()) {
+          <div class="flex items-center justify-center space-x-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold pt-1">
+            <app-icon name="sparkles" class="w-3.5 h-3.5 animate-spin-slow"></app-icon>
+            <span>Transcribiendo audio y extrayendo conceptos con IA...</span>
+          </div>
+        }
+      </div>
+
+      <!-- Active Memo Details & Summary -->
+      @if (activeMemo(); as memo) {
+        <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3 shadow-xs">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">
+                {{ memo.courseName }}
+              </span>
+              <h4 class="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                {{ memo.title }}
+              </h4>
+            </div>
+            <span class="text-xs font-mono text-slate-400">
+              ⏱ {{ memo.durationSeconds }}s de audio
+            </span>
+          </div>
+
+          <!-- Transcription Box -->
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+            "{{ memo.transcription }}"
+          </div>
+
+          <!-- Key Points & Formulas Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 space-y-1 text-xs">
+              <span class="font-bold text-indigo-950 dark:text-indigo-200 flex items-center space-x-1">
+                <span>💡 Puntos Clave Extraídos</span>
+              </span>
+              <ul class="space-y-1 text-slate-700 dark:text-slate-300 text-[11px]">
+                @for (pt of memo.summaryBulletPoints; track pt) {
+                  <li>• {{ pt }}</li>
+                }
+              </ul>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/60 space-y-1 text-xs">
+              <span class="font-bold text-amber-950 dark:text-amber-200 flex items-center space-x-1">
+                <span>📐 Fórmulas / Definiciones</span>
+              </span>
+              <div class="space-y-1">
+                @for (f of memo.formulasDetected; track f) {
+                  <code class="block px-2 py-0.5 rounded bg-white dark:bg-slate-900 font-mono text-[10px] text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/60">
+                    {{ f }}
+                  </code>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Conversion CTAs -->
+          <div class="flex items-center space-x-2 pt-1 flex-wrap gap-2">
+            <button
+              (click)="convertToFlashcards(memo)"
+              class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center space-x-1.5"
+            >
+              <span>🗂️ Generar Flashcards de Repaso</span>
+            </button>
+
+            <button
+              (click)="createTaskFromMemo(memo)"
+              class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center space-x-1.5"
+            >
+              <span>✓ Crear Tarea</span>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- History List -->
+      <div class="space-y-2 pt-1">
+        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+          Historial de Grabaciones ({{ state.voiceMemos().length }})
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          @for (m of state.voiceMemos(); track m.id) {
+            <div
+              (click)="activeMemo.set(m)"
+              class="p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between"
+              [ngClass]="activeMemo()?.id === m.id
+                ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-400 shadow-2xs'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'"
+            >
+              <div class="truncate pr-2">
+                <div class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ m.title }}</div>
+                <div class="text-[10px] text-slate-400">{{ m.courseName }}</div>
+              </div>
+              <span class="text-xs text-indigo-600 dark:text-indigo-400 flex-shrink-0">▶</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,455 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl p-6 sm:p-7 shadow-2xl space-y-5 my-8 transition-colors">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+        Nueva Entrada Académica
+      </h3>
+      <button
+        (click)="close()"
+        class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-lg font-mono transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Tab Buttons -->
+    <div class="grid grid-cols-5 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold">
+      <button
+        (click)="activeType.set('ai_quick')"
+        class="py-2 rounded-lg transition flex items-center justify-center space-x-1"
+        [ngClass]="activeType() === 'ai_quick' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        <app-icon name="sparkles" class="w-3 h-3 text-amber-300"></app-icon>
+        <span class="hidden sm:inline">Asistente IA</span>
+        <span class="sm:hidden">IA</span>
+      </button>
+      <button
+        (click)="activeType.set('task')"
+        class="py-2 rounded-lg transition"
+        [ngClass]="activeType() === 'task' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        Tarea
+      </button>
+      <button
+        (click)="activeType.set('exam')"
+        class="py-2 rounded-lg transition"
+        [ngClass]="activeType() === 'exam' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        Examen
+      </button>
+      <button
+        (click)="activeType.set('block')"
+        class="py-2 rounded-lg transition"
+        [ngClass]="activeType() === 'block' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        Bloque
+      </button>
+      <button
+        (click)="activeType.set('course')"
+        class="py-2 rounded-lg transition"
+        [ngClass]="activeType() === 'course' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        Materia
+      </button>
+    </div>
+
+    <!-- 1. AI Quick input -->
+    @if (activeType() === 'ai_quick') {
+      <div class="space-y-4">
+        <div class="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300 space-y-1">
+          <span class="font-bold text-indigo-950 dark:text-indigo-200 block">✨ Lenguaje Natural Inteligente:</span>
+          <p class="text-slate-600 dark:text-slate-400">
+            Escribe en español lo que tienes que hacer (ej: "Entregar reporte de cálculo el viernes a las 11pm con 4 ejercicios") y la IA creará los pasos, prioridad y estimación.
+          </p>
+        </div>
+
+        <textarea
+          [(ngModel)]="aiText"
+          placeholder="Ej. Tengo que hacer el informe de laboratorio de física para el próximo martes a las 5pm..."
+          rows="4"
+          class="w-full p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+        ></textarea>
+
+        <button
+          (click)="handleAiProcess()"
+          [disabled]="isAiLoading() || !aiText.trim()"
+          class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center justify-center space-x-2 transition disabled:opacity-50"
+        >
+          <app-icon name="sparkles" class="w-4 h-4 text-amber-300"></app-icon>
+          <span>{{ isAiLoading() ? 'Analizando con IA...' : 'Crear Tarea con IA' }}</span>
+        </button>
+      </div>
+    }
+
+    <!-- 2. Manual Task Form -->
+    @if (activeType() === 'task') {
+      <form (submit)="handleCreateTask($event)" class="space-y-3.5 text-xs">
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Título de la Entrega / Tarea:</label>
+          <input
+            type="text"
+            required
+            [(ngModel)]="taskTitle"
+            name="taskTitle"
+            placeholder="Ej. Guía de ejercicios de Álgebra"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Materia / Curso:</label>
+            <select
+              [(ngModel)]="taskCourseId"
+              name="taskCourseId"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            >
+              <option value="general">General / Personal</option>
+              @for (c of state.courses(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Prioridad:</label>
+            <select
+              [(ngModel)]="taskPriority"
+              name="taskPriority"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            >
+              <option value="alta">🔴 Alta</option>
+              <option value="media">🟡 Media</option>
+              <option value="baja">🟢 Baja</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Fecha de Entrega:</label>
+            <input
+              type="date"
+              [(ngModel)]="taskDueDate"
+              name="taskDueDate"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Hora Límite:</label>
+            <input
+              type="time"
+              [(ngModel)]="taskDueTime"
+              name="taskDueTime"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Estimado (min):</label>
+            <input
+              type="number"
+              min="15"
+              step="15"
+              [(ngModel)]="taskEstimatedMin"
+              name="taskEstimatedMin"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Cuadrante Eisenhower:</label>
+          <select
+            [(ngModel)]="taskQuadrant"
+            name="taskQuadrant"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+          >
+            <option value="urgente-importante">Hacer Ya (Urgente e Importante)</option>
+            <option value="no-urgente-importante">Planificar (No Urgente pero Importante)</option>
+            <option value="urgente-no-importante">Delegar/Rápido (Urgente pero No Importante)</option>
+            <option value="no-urgente-no-importante">Minimizar (No Urgente ni Importante)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Descripción o Requisitos:</label>
+          <textarea
+            [(ngModel)]="taskDesc"
+            name="taskDesc"
+            rows="2"
+            placeholder="Instrucciones del profesor o detalles..."
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs transition"
+        >
+          Guardar Tarea
+        </button>
+      </form>
+    }
+
+    <!-- 3. Exam Form -->
+    @if (activeType() === 'exam') {
+      <form (submit)="handleCreateExam($event)" class="space-y-3.5 text-xs">
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Título del Examen o Evaluación:</label>
+          <input
+            type="text"
+            required
+            [(ngModel)]="examTitle"
+            name="examTitle"
+            placeholder="Ej. Examen Parcial II: Termodinámica"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Materia:</label>
+            <select
+              [(ngModel)]="examCourseId"
+              name="examCourseId"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            >
+              @for (c of state.courses(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Dificultad:</label>
+            <select
+              [(ngModel)]="examDifficulty"
+              name="examDifficulty"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            >
+              <option value="alta">🔴 Alta</option>
+              <option value="media">🟡 Media</option>
+              <option value="baja">🟢 Baja</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Fecha:</label>
+            <input
+              type="date"
+              [(ngModel)]="examDate"
+              name="examDate"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Hora:</label>
+            <input
+              type="time"
+              [(ngModel)]="examTime"
+              name="examTime"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Ponderación (%):</label>
+            <input
+              type="number"
+              min="5"
+              max="100"
+              [(ngModel)]="examWeight"
+              name="examWeight"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Aula / Salón (opcional):</label>
+          <input
+            type="text"
+            [(ngModel)]="examClassroom"
+            name="examClassroom"
+            placeholder="Ej. Auditorio B-301"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Temario / Contenido a evaluar:</label>
+          <textarea
+            [(ngModel)]="examTopics"
+            name="examTopics"
+            rows="2"
+            placeholder="Ej. Capítulos 1 al 4, Integrales triples y coordenadas cilíndricas..."
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-xs transition"
+        >
+          Guardar Examen
+        </button>
+      </form>
+    }
+
+    <!-- 4. Study Block Form -->
+    @if (activeType() === 'block') {
+      <form (submit)="handleCreateBlock($event)" class="space-y-3.5 text-xs">
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Título del Bloque:</label>
+          <input
+            type="text"
+            required
+            [(ngModel)]="blockTitle"
+            name="blockTitle"
+            placeholder="Ej. Estudio de Matemáticas"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+          />
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Día:</label>
+            <select
+              [(ngModel)]="blockDay"
+              name="blockDay"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            >
+              <option [value]="1">Lunes</option>
+              <option [value]="2">Martes</option>
+              <option [value]="3">Miércoles</option>
+              <option [value]="4">Jueves</option>
+              <option [value]="5">Viernes</option>
+              <option [value]="6">Sábado</option>
+              <option [value]="0">Domingo</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Inicio:</label>
+            <input
+              type="time"
+              [(ngModel)]="blockStart"
+              name="blockStart"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Fin:</label>
+            <input
+              type="time"
+              [(ngModel)]="blockEnd"
+              name="blockEnd"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Técnica:</label>
+          <select
+            [(ngModel)]="blockTechnique"
+            name="blockTechnique"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
+          >
+            <option value="Pomodoro 25/5">Pomodoro 25/5</option>
+            <option value="Pomodoro 50/10">Pomodoro 50/10</option>
+            <option value="Regla 52/17">Regla 52/17</option>
+            <option value="Active Recall">Active Recall</option>
+            <option value="Time Blocking">Time Blocking Libre</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-xs transition"
+        >
+          Agregar al Horario
+        </button>
+      </form>
+    }
+
+    <!-- 5. Course Form -->
+    @if (activeType() === 'course') {
+      <form (submit)="handleCreateCourse($event)" class="space-y-3.5 text-xs">
+        <div class="space-y-1">
+          <label class="text-slate-700 dark:text-slate-300 font-semibold">Nombre de la Materia:</label>
+          <input
+            type="text"
+            required
+            [(ngModel)]="courseName"
+            name="courseName"
+            placeholder="Ej. Mecánica de Fluidos"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Código:</label>
+            <input
+              type="text"
+              [(ngModel)]="courseCode"
+              name="courseCode"
+              placeholder="Ej. ING-302"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Color:</label>
+            <input
+              type="color"
+              [(ngModel)]="courseColor"
+              name="courseColor"
+              class="w-full h-9 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Profesor (opcional):</label>
+            <input
+              type="text"
+              [(ngModel)]="courseProfessor"
+              name="courseProfessor"
+              placeholder="Ej. Dr. Andrés Peña"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-700 dark:text-slate-300 font-semibold">Aula / Salón (opcional):</label>
+            <input
+              type="text"
+              [(ngModel)]="courseRoom"
+              name="courseRoom"
+              placeholder="Ej. Lab 2"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-600 placeholder-slate-400 dark:placeholder-slate-500"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-xs transition"
+        >
+          Guardar Materia
+        </button>
+      </form>
+    }
+  </div>
+</div>
+

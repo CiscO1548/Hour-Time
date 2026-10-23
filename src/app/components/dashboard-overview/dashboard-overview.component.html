@@ -1,0 +1,456 @@
+<div class="space-y-6 pb-12">
+  <!-- 1. Hero Banner with AI suggestion -->
+  <div class="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-xs transition-colors duration-200">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 text-xs font-semibold mb-2">
+          <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-500 animate-spin-slow"></app-icon>
+          <span>Optimización Académica Activa</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          Bienvenido a tu Espacio de Rendimiento
+        </h1>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          Tienes <span class="text-amber-600 dark:text-amber-500 font-semibold">{{ pendingTasks().length }} tareas</span> pendientes y
+          @if (nextExam(); as exam) {
+            <span>
+              el examen de <span class="text-indigo-600 dark:text-indigo-400 font-semibold">{{ exam.title }}</span> ({{ getDaysUntilExam(exam.date) }}).
+            </span>
+          } @else {
+            <span>tu calendario está balanceado para esta semana.</span>
+          }
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap">
+        <button
+          (click)="state.isCommuteModalOpen.set(true)"
+          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+          title="Verificar tiempos de traslado entre sedes y tráfico en Google Maps"
+        >
+          <app-icon name="map-pin" class="w-4 h-4 text-white"></app-icon>
+          <span>Tráfico Google Maps</span>
+        </button>
+
+        <button
+          (click)="state.isConflictResolverOpen.set(true)"
+          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+          title="El Agente Autónomo resuelve cruces de horario y reprogramaciones"
+        >
+          <app-icon name="zap" class="w-4 h-4 text-white"></app-icon>
+          <span>Resolución de Conflictos IA</span>
+          @if (state.detectedConflictsCount() > 0) {
+            <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+          }
+        </button>
+
+        <button
+          (click)="state.isAiOptimizerOpen.set(true)"
+          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+        >
+          <app-icon name="sparkles" class="w-4 h-4 text-amber-300"></app-icon>
+          <span>Calcular Mejor Momento de Estudio</span>
+        </button>
+
+        <button
+          (click)="state.setTab('pomodoro')"
+          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition shadow-2xs"
+        >
+          <app-icon name="play" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500 fill-emerald-600 dark:fill-emerald-500"></app-icon>
+          <span>Sesión Pomodoro Rápida</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Key Metrics Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Metric 1: Weekly Study Hours -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Horas de Estudio Semanal
+        </span>
+        <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <app-icon name="clock" class="w-4 h-4"></app-icon>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ totalStudyHours() }}h</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">/ meta {{ weeklyTargetHours() }}h</span>
+      </div>
+      <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+        <div
+          class="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-500"
+          [style.width.%]="progressPercent()"
+        ></div>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+        {{ progressPercent() }}% completado de tu meta semanal
+      </p>
+    </div>
+
+    <!-- Metric 2: Urgent / Pending Tasks -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Tareas & Entregas
+        </span>
+        <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-500">
+          <app-icon name="check-circle-2" class="w-4 h-4"></app-icon>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ pendingTasks().length }}</span>
+        <span class="text-xs text-amber-600 dark:text-amber-500 font-medium">
+          ({{ urgentTasks().length }} urgentes)
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-4 flex items-center justify-between">
+        <span>Completadas: {{ completedTasksCount() }}</span>
+        <button
+          (click)="state.setTab('tasks')"
+          class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
+        >
+          Ver todas →
+        </button>
+      </p>
+    </div>
+
+    <!-- Metric 3: Next Exam -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Próximo Examen
+        </span>
+        <div class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-500">
+          <app-icon name="graduation-cap" class="w-4 h-4"></app-icon>
+        </div>
+      </div>
+      @if (nextExam(); as exam) {
+        <div class="mt-3">
+          <span class="text-base font-bold text-slate-900 dark:text-white line-clamp-1">
+            {{ exam.title }}
+          </span>
+          <div class="flex items-center space-x-2 mt-1">
+            <span class="text-xs px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-800">
+              {{ getDaysUntilExam(exam.date) }}
+            </span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Pond: {{ exam.weightPercentage || 25 }}%</span>
+          </div>
+        </div>
+      } @else {
+        <div class="mt-3">
+          <span class="text-sm font-semibold text-slate-600 dark:text-slate-400">Sin exámenes próximos</span>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">¡Todo bajo control!</p>
+        </div>
+      }
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 flex justify-end">
+        <button
+          (click)="state.setTab('exams')"
+          class="text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 font-medium"
+        >
+          Ver plan de estudio →
+        </button>
+      </p>
+    </div>
+
+    <!-- Metric 4: Streak & Focus Quality -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Racha de Estudio
+        </span>
+        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-500">
+          <app-icon name="flame" class="w-4 h-4 text-amber-500 fill-amber-500"></app-icon>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline space-x-2">
+        <span class="text-2xl font-extrabold text-amber-600 dark:text-amber-500">{{ state.preferences().studyStreakDays || 0 }}</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">días consecutivos</span>
+      </div>
+      <div class="mt-4 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+        <span>{{ recentSessionsCount() }} sesiones esta semana</span>
+        <button
+          (click)="state.setTab('analytics')"
+          class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium"
+        >
+          Ver Analíticas →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Dashboard 2-Column Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left 2 Cols: Today's Schedule & Urgent Tasks -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Today's Agenda -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2">
+            <app-icon name="calendar" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></app-icon>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Agenda de Hoy ({{ todayAgenda().length }} actividades)
+            </h3>
+          </div>
+          <button
+            (click)="state.setTab('schedule')"
+            class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center space-x-1"
+          >
+            <span>Ver horario semanal completo</span>
+            <app-icon name="arrow-right" class="w-3.5 h-3.5"></app-icon>
+          </button>
+        </div>
+
+        @if (todayAgenda().length === 0) {
+          <div class="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+            <app-icon name="book-open" class="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2"></app-icon>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              No tienes clases ni bloques de estudio agendados para hoy.
+            </p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Aprovecha para crear un bloque de estudio o pedirle a la IA que distribuya tus horarios.
+            </p>
+            <button
+              (click)="state.isAiOptimizerOpen.set(true)"
+              class="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium inline-flex items-center space-x-1.5 shadow-xs"
+            >
+              <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-300"></app-icon>
+              <span>Sugerir bloques de hoy con IA</span>
+            </button>
+          </div>
+        } @else {
+          <div class="space-y-2.5">
+            @for (item of todayAgenda(); track item.id) {
+              <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition">
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="w-2.5 h-10 rounded-full flex-shrink-0"
+                    [style.backgroundColor]="item.color"
+                  ></div>
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-xs font-bold text-slate-900 dark:text-white">{{ item.title }}</span>
+                      <span
+                        class="text-[10px] px-1.5 py-0.5 rounded-md font-semibold"
+                        [ngClass]="item.type === 'class' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800' : 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'"
+                      >
+                        {{ item.type === 'class' ? 'Clase' : 'Bloque de Estudio' }}
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {{ item.room ? item.room + ' • ' : '' }}
+                      <span class="font-mono text-slate-700 dark:text-slate-300 font-medium">
+                        {{ item.startTime }} - {{ item.endTime }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                @if (item.type === 'study') {
+                  <button
+                    (click)="startFocusForAgendaItem(item)"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-800/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-center space-x-1.5 transition"
+                    title="Iniciar Pomodoro para este bloque"
+                  >
+                    <app-icon name="play" class="w-3.5 h-3.5 fill-current"></app-icon>
+                    <span class="hidden sm:inline">Iniciar Foco</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Urgent Tasks & Assignments -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2">
+            <app-icon name="alert-triangle" class="w-4 h-4 text-amber-500"></app-icon>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Entregas Prioritarias & Tareas Urgentes
+            </h3>
+          </div>
+          <button
+            (click)="state.isQuickAddOpen.set(true)"
+            class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-semibold"
+          >
+            + Añadir tarea
+          </button>
+        </div>
+
+        @if (urgentTasks().length === 0) {
+          <div class="p-6 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <app-icon name="check-circle-2" class="w-7 h-7 text-emerald-500 mx-auto mb-1.5"></app-icon>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              ¡No tienes entregas urgentes para las próximas 48 horas!
+            </p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              Puedes avanzar con tus tareas no urgentes de la Matriz de Eisenhower.
+            </p>
+          </div>
+        } @else {
+          <div class="space-y-2.5">
+            @for (task of urgentTasks().slice(0, 4); track task.id) {
+              @let course = getCourseForTask(task.courseId);
+              @let completedSubtasks = getCompletedSubtasksCount(task);
+
+              <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start space-x-3">
+                  <button
+                    (click)="handleTaskCheck(task.id)"
+                    class="mt-0.5 w-5 h-5 rounded-md border border-slate-300 dark:border-slate-600 hover:border-emerald-500 dark:hover:border-emerald-500 bg-white dark:bg-slate-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400 transition"
+                    title="Marcar como completada"
+                  >
+                    @if (task.status === 'completed') {
+                      <app-icon name="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-900/40"></app-icon>
+                    }
+                  </button>
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-xs font-bold text-slate-900 dark:text-white">{{ task.title }}</span>
+                      <span
+                        class="text-[9px] uppercase px-1.5 py-0.5 rounded-md font-bold"
+                        [ngClass]="task.priority === 'alta' ? 'bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800' : 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'"
+                      >
+                        {{ task.priority }}
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {{ course?.name || 'General' }} • Vence:
+                      <span class="text-amber-600 dark:text-amber-500 font-semibold">
+                        {{ task.dueDate }} {{ task.dueTime ? '(' + task.dueTime + ')' : '' }}
+                      </span>
+                      @if (task.subtasks.length > 0) {
+                        <span class="ml-2 text-slate-400 dark:text-slate-500">
+                          • Pasos: {{ completedSubtasks }}/{{ task.subtasks.length }}
+                        </span>
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-2 self-end sm:self-auto">
+                  <button
+                    (click)="state.startFocusWithTask(task)"
+                    class="px-3 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-800/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold flex items-center space-x-1.5 transition"
+                    title="Trabajar en esta tarea con Pomodoro"
+                  >
+                    <app-icon name="play" class="w-3 h-3 fill-current"></app-icon>
+                    <span>Foco</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right 1 Col: Productivity Methods & AI Study Advisor -->
+    <div class="space-y-6">
+      <!-- Productivity Methods Fast Launcher -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+        <div class="flex items-center space-x-2 mb-3.5">
+          <app-icon name="zap" class="w-4 h-4 text-amber-500"></app-icon>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            Métodos de Productividad
+          </h3>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+          Selecciona una técnica científica para estructurar tu sesión de estudio:
+        </p>
+
+        <div class="space-y-2">
+          <!-- Pomodoro 25/5 -->
+          <button
+            (click)="startQuickMethod('Bloque Pomodoro Clásico', 'pomodoro_25_5', 25)"
+            class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition text-left group"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                🍅 Pomodoro Clásico (25 / 5)
+              </span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">25 min</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Ideal para evitar la fatiga mental y tareas de memorización rápida.
+            </p>
+          </button>
+
+          <!-- Pomodoro 50/10 -->
+          <button
+            (click)="startQuickMethod('Bloque Pomodoro Extendido', 'pomodoro_50_10', 50)"
+            class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition text-left group"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                ⚡ Foco Profundo (50 / 10)
+              </span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">50 min</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Excelente para resolución de problemas complejos de matemáticas y programación.
+            </p>
+          </button>
+
+          <!-- Regla 52/17 -->
+          <button
+            (click)="startQuickMethod('Ciclo Ultradiario 52/17', 'method_52_17', 52)"
+            class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition text-left group"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                🧠 Regla 52 / 17 (Dra. Desanka)
+              </span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">52 min</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Basado en ritmos biológicos ultradianos para máxima absorción sin estrés.
+            </p>
+          </button>
+
+          <!-- Time Blocking Guide Button -->
+          <button
+            (click)="state.setTab('schedule')"
+            class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/30 transition text-left group"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">
+                🗓️ Time Blocking (Bloques de Tiempo)
+              </span>
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-500 font-semibold">Ver Horario</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Protege franjas horarias específicas entre clases y evita la sobrecarga.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Coach Mini Card -->
+      <div class="bg-indigo-50/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+        <div class="flex items-center space-x-2 mb-2">
+          <app-icon name="award" class="w-4 h-4 text-indigo-700 dark:text-indigo-400"></app-icon>
+          <h4 class="text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">
+            Consejo del Coach Académico IA
+          </h4>
+        </div>
+        <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+          "Para tu examen de Cálculo en 4 días, divide tu estudio en bloques cortos de 45 min con recuperación activa (caminar 5 min). El Spaced Repetition aumenta la retención un 250% más que estudiar todo la noche anterior."
+        </p>
+        <div class="mt-4 pt-3 border-t border-indigo-200 dark:border-indigo-800/50 flex items-center justify-between">
+          <span class="text-[11px] text-indigo-800 dark:text-indigo-400 font-medium">¿Quieres un diagnóstico completo?</span>
+          <button
+            (click)="state.setTab('analytics')"
+            class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition"
+          >
+            Ver diagnóstico →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

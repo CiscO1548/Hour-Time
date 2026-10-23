@@ -1,0 +1,624 @@
+@if (!isZenMode()) {
+  <div class="space-y-6 pb-12">
+    <!-- Header & Presets -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4 transition-colors duration-200">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center space-x-2">
+            <app-icon name="clock" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Modo Foco & Temporizador de Productividad
+            </h2>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Optimizado con métodos de trabajo profundo y descanso activo para máxima retención.
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button
+            (click)="toggleZenMode(true)"
+            class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold transition shadow-xs transform active:scale-95"
+            title="Modo Zen inmersivo a pantalla completa sin distracciones"
+          >
+            <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-300"></app-icon>
+            <span>Modo Zen 🎯</span>
+          </button>
+
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            Ciclos hoy:
+          </span>
+          <span class="px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
+            {{ completedCycles() }} 🍅
+          </span>
+        </div>
+      </div>
+
+      <!-- Method selector buttons -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+        @for (preset of methodPresets; track preset.id) {
+          <button
+            (click)="handleSelectMethod(preset.id)"
+            class="p-3.5 rounded-2xl border text-left transition"
+            [ngClass]="method() === preset.id ? 'bg-indigo-50/90 dark:bg-indigo-950/80 border-indigo-500 dark:border-indigo-600 text-indigo-950 dark:text-indigo-200 shadow-xs ring-1 ring-indigo-500/20' : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold">{{ preset.name }}</span>
+              <span class="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">{{ preset.workMin }}m</span>
+            </div>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{{ preset.desc }}</p>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Main Focus Screen (Timer + Controls) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left 2 Cols: Circular Timer -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 flex flex-col items-center justify-center shadow-xs relative overflow-hidden transition-colors duration-200">
+        <!-- Subtle glow background -->
+        <div
+          class="absolute w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-700"
+          [ngClass]="mode() === 'work' ? 'bg-indigo-500' : 'bg-emerald-500'"
+        ></div>
+
+        <!-- Mode badge -->
+        <div class="mb-6 flex items-center space-x-2">
+          <span
+            class="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors duration-300"
+            [ngClass]="mode() === 'work' ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' : 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'"
+          >
+            {{ mode() === 'work' ? '⚡ Bloque de Enfoque Profundo' : '🌿 Descanso Activo Regenerativo' }}
+          </span>
+        </div>
+
+        <!-- SVG Circular Progress & Time Display -->
+        <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-2 select-none">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 280 280">
+            <!-- Background circle track -->
+            <circle
+              cx="140"
+              cy="140"
+              [attr.r]="radius"
+              stroke-width="12"
+              class="text-slate-100 dark:text-slate-800 stroke-current fill-transparent"
+            />
+            <!-- Animated progress circle -->
+            <circle
+              cx="140"
+              cy="140"
+              [attr.r]="radius"
+              stroke-width="12"
+              stroke-linecap="round"
+              class="stroke-current fill-transparent transition-all duration-1000 ease-linear"
+              [ngClass]="mode() === 'work' ? 'text-indigo-600 dark:text-indigo-500' : 'text-emerald-500 dark:text-emerald-400'"
+              [style.strokeDasharray]="circumference"
+              [style.strokeDashoffset]="strokeDashoffset()"
+            />
+          </svg>
+
+          <!-- Inner Time Display -->
+          <div class="absolute flex flex-col items-center justify-center text-center">
+            <span class="font-mono text-5xl sm:text-6xl font-black text-slate-900 dark:text-white tracking-tighter">
+              {{ timeFormatted() }}
+            </span>
+            <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+              {{ isRunning() ? (mode() === 'work' ? 'En foco...' : 'Descansando...') : 'En pausa' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Controls (Play / Pause / Reset / Skip) -->
+        <div class="flex items-center space-x-3 mt-6">
+          <button
+            (click)="handleReset()"
+            class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition transform active:scale-95"
+            title="Reiniciar bloque"
+          >
+            <app-icon name="rotate-ccw" class="w-5 h-5"></app-icon>
+          </button>
+
+          <button
+            (click)="handleTogglePlay()"
+            class="px-8 py-3.5 rounded-2xl font-bold text-sm text-white shadow-xs flex items-center space-x-2 transition transform active:scale-95"
+            [ngClass]="mode() === 'work' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'"
+          >
+            <app-icon [name]="isRunning() ? 'pause' : 'play'" class="w-4 h-4 fill-current"></app-icon>
+            <span>{{ isRunning() ? 'Pausar' : 'Iniciar Foco' }}</span>
+          </button>
+
+          <button
+            (click)="handleSkipPhase()"
+            class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition transform active:scale-95"
+            title="Saltar a la siguiente fase"
+          >
+            <app-icon name="skip-forward" class="w-5 h-5"></app-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right 1 Col: Linked Task & Ambient Sound -->
+      <div class="space-y-6">
+        <!-- Linked Task Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-3 transition-colors duration-200">
+          <div class="flex items-center space-x-2">
+            <app-icon name="check-square" class="w-4 h-4 text-slate-500 dark:text-slate-400"></app-icon>
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Vincular con Tarea
+            </h3>
+          </div>
+
+          <select
+            [ngModel]="selectedTaskId()"
+            (ngModelChange)="selectedTaskId.set($event)"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-600"
+          >
+            <option value="">-- Sesión Libre / Sin Tarea --</option>
+            @for (task of state.tasks(); track task.id) {
+              @if (task.status !== 'completed') {
+                <option [value]="task.id">{{ task.title }}</option>
+              }
+            }
+          </select>
+
+          @if (currentTask(); as task) {
+            <div class="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/60 space-y-1.5 animate-in fade-in duration-150">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-indigo-900 dark:text-indigo-300">
+                  {{ task.title }}
+                </span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
+                  {{ task.priority }}
+                </span>
+              </div>
+              @if (task.productivityTip) {
+                <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-tight">
+                  💡 {{ task.productivityTip }}
+                </p>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Ambient Sound Player (Web Audio API Synthesized) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-3.5 transition-colors duration-200">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <app-icon name="volume-2" class="w-4 h-4 text-slate-500 dark:text-slate-400"></app-icon>
+              <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Sonido Ambiental Relajante
+              </h3>
+            </div>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Web Audio Synth</span>
+          </div>
+
+          <!-- Sound Options Grid -->
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              (click)="ambientSound.set('off')"
+              class="py-2 px-3 rounded-xl border text-xs font-medium transition"
+              [ngClass]="ambientSound() === 'off' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+            >
+              Silencio
+            </button>
+            <button
+              (click)="ambientSound.set('rain')"
+              class="py-2 px-3 rounded-xl border text-xs font-medium transition flex items-center justify-center space-x-1"
+              [ngClass]="ambientSound() === 'rain' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+            >
+              <span>🌧️</span>
+              <span>Lluvia Suave</span>
+            </button>
+            <button
+              (click)="ambientSound.set('whitenoise')"
+              class="py-2 px-3 rounded-xl border text-xs font-medium transition flex items-center justify-center space-x-1"
+              [ngClass]="ambientSound() === 'whitenoise' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+            >
+              <span>📻</span>
+              <span>Ruido Blanco</span>
+            </button>
+            <button
+              (click)="ambientSound.set('waves')"
+              class="py-2 px-3 rounded-xl border text-xs font-medium transition flex items-center justify-center space-x-1"
+              [ngClass]="ambientSound() === 'waves' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+            >
+              <span>🌊</span>
+              <span>Olas de Mar</span>
+            </button>
+          </div>
+
+          <!-- Volume slider if sound is active -->
+          @if (ambientSound() !== 'off') {
+            <div class="space-y-1 pt-1 animate-in fade-in duration-150">
+              <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>Volumen ambiental</span>
+                <span>{{ Math.round(ambientVolume() * 100) }}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                [ngModel]="ambientVolume()"
+                (ngModelChange)="ambientVolume.set($event)"
+                class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+            </div>
+          }
+        </div>
+
+        <!-- Recent Focus Sessions -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-3 transition-colors duration-200">
+          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            Historial de Foco Reciente
+          </h3>
+
+          <div class="space-y-2">
+            @if (state.focusSessions().length === 0) {
+              <p class="text-xs text-slate-400 text-center py-3">
+                Aún no has registrado sesiones de foco hoy.
+              </p>
+            } @else {
+              @for (s of state.focusSessions().slice(0, 4); track s.id) {
+                <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                  <div>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 block truncate max-w-[160px]">
+                      {{ s.taskTitle || 'Sesión de Estudio' }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">
+                      {{ s.durationMinutes }} min • Energía:
+                      @for (_ of getStarsArray(s.energyLevel); track $index) {
+                        ⭐
+                      }
+                    </span>
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                    {{ formatTime(s.timestamp) }}
+                  </span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Completion Feedback Modal -->
+    @if (showCompletionModal()) {
+      <div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 transition-colors">
+          <div class="text-center space-y-1">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
+              <app-icon name="check-circle-2" class="w-6 h-6"></app-icon>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">¡Sesión de Foco Completada!</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              Has completado {{ workDurationMinutes() }} minutos de trabajo productivo.
+            </p>
+          </div>
+
+          <!-- Energy Rating -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block text-center">
+              ¿Cómo estuvo tu nivel de concentración y energía?
+            </label>
+            <div class="flex items-center justify-center space-x-2">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <button
+                  (click)="energyRating.set($any(star))"
+                  class="p-1 text-2xl transition transform hover:scale-110"
+                >
+                  <app-icon
+                    name="star"
+                    class="w-7 h-7"
+                    [ngClass]="star <= energyRating() ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600'"
+                  ></app-icon>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="space-y-1">
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+              Notas o logros de la sesión (opcional):
+            </label>
+            <textarea
+              [(ngModel)]="sessionNotes"
+              placeholder="Ej. Avancé 5 páginas del resumen de cálculo..."
+              rows="2"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-indigo-600"
+            ></textarea>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button
+              (click)="handleSaveCompletedSession()"
+              class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+            >
+              Guardar Sesión & Iniciar Descanso ({{ breakDurationMinutes() }}m)
+            </button>
+
+            <button
+              (click)="handleSaveCompletedSession(); state.openFlashcards()"
+              class="w-full py-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold transition flex items-center justify-center space-x-1.5"
+            >
+              <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-400"></app-icon>
+              <span>Iniciar Flashcards de Repaso Inmediato 🎴</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <!-- Fullscreen Zen Mode View Isolated (Completely Replaces Standard View) -->
+  <div
+    class="fixed inset-0 z-[100] w-screen h-screen flex flex-col justify-between p-6 sm:p-10 transition-colors duration-700 overflow-hidden relative select-none"
+    [ngClass]="{
+      'zen-theme-library': zenTheme() === 'library',
+      'zen-theme-rain': zenTheme() === 'rain',
+      'zen-theme-lofi': zenTheme() === 'lofi',
+      'zen-theme-space': zenTheme() === 'space'
+    }"
+  >
+    <!-- Dynamic Ambient Animated Backgrounds -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      <!-- 1. RAIN THEME: Storm Glass & Raindrops -->
+      @if (zenTheme() === 'rain') {
+        <div class="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-slate-900/30 to-blue-950/50 pointer-events-none"></div>
+        <div class="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-cyan-500/15 via-blue-500/5 to-transparent blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-cyan-950/40 to-transparent pointer-events-none"></div>
+
+        @for (drop of raindrops; track drop.id) {
+          <div
+            class="zen-raindrop"
+            [style.left.%]="drop.left"
+            [style.height.px]="drop.height"
+            [style.animationDuration.s]="drop.duration"
+            [style.animationDelay.s]="drop.delay"
+            [style.opacity]="drop.opacity"
+          ></div>
+        }
+      }
+
+      <!-- 2. SPACE THEME: Twinkling Stars & Shooting Stars -->
+      @if (zenTheme() === 'space') {
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)] pointer-events-none"></div>
+        @for (star of stars; track star.id) {
+          <div
+            class="zen-star"
+            [style.left.%]="star.left"
+            [style.top.%]="star.top"
+            [style.width.px]="star.size"
+            [style.height.px]="star.size"
+            [style.animationDuration.s]="star.duration"
+            [style.animationDelay.s]="star.delay"
+          ></div>
+        }
+        @for (comet of comets; track comet.id) {
+          <div
+            class="zen-comet"
+            [style.top.%]="comet.top"
+            [style.right.%]="comet.right"
+            [style.animationDuration.s]="comet.duration"
+            [style.animationDelay.s]="comet.delay"
+          ></div>
+        }
+      }
+
+      <!-- 3. LIBRARY THEME: Warm Desk Reading Lamp & Golden Dust Motes -->
+      @if (zenTheme() === 'library') {
+        <!-- Overhead Brass Reading Lamp Light Beam -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[480px] bg-gradient-to-b from-amber-500/30 via-amber-600/10 to-transparent blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-amber-400/40 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08),transparent_80%)] pointer-events-none"></div>
+
+        @for (mote of motes; track mote.id) {
+          <div
+            class="zen-mote"
+            [style.left.%]="mote.left"
+            [style.width.px]="mote.size"
+            [style.height.px]="mote.size"
+            [style.animationDuration.s]="mote.duration"
+            [style.animationDelay.s]="mote.delay"
+          ></div>
+        }
+      }
+
+      <!-- 4. LO-FI THEME: Rising Coffee Steam & Sunset Glow -->
+      @if (zenTheme() === 'lofi') {
+        <div class="absolute bottom-0 inset-x-0 h-96 bg-gradient-to-t from-pink-900/30 via-purple-900/15 to-transparent pointer-events-none"></div>
+        <div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-pink-500/15 blur-3xl pointer-events-none"></div>
+
+        @for (steam of steams; track steam.id) {
+          <div
+            class="zen-steam"
+            [style.left.%]="steam.left"
+            [style.bottom.%]="steam.bottom"
+            [style.width.px]="steam.size"
+            [style.height.px]="steam.size"
+            [style.animationDuration.s]="steam.duration"
+            [style.animationDelay.s]="steam.delay"
+          ></div>
+        }
+      }
+    </div>
+
+    <!-- Top Bar: Theme Selector & Exit -->
+    <div class="relative z-10 flex items-center justify-between flex-wrap gap-3">
+      <!-- Theme Switcher -->
+      <div class="flex items-center space-x-1.5 p-1.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 text-xs shadow-2xl">
+        <button
+          (click)="zenTheme.set('library')"
+          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5"
+          [ngClass]="zenTheme() === 'library' 
+            ? 'bg-amber-500/30 text-amber-200 border border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
+        >
+          <span>📚</span>
+          <span>Biblioteca</span>
+        </button>
+
+        <button
+          (click)="zenTheme.set('rain')"
+          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5"
+          [ngClass]="zenTheme() === 'rain' 
+            ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]' 
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
+        >
+          <span>🌧️</span>
+          <span>Lluvia</span>
+        </button>
+
+        <button
+          (click)="zenTheme.set('lofi')"
+          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5"
+          [ngClass]="zenTheme() === 'lofi' 
+            ? 'bg-pink-500/30 text-pink-200 border border-pink-400/50 shadow-[0_0_15px_rgba(236,72,153,0.3)]' 
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
+        >
+          <span>☕</span>
+          <span>Lo-Fi</span>
+        </button>
+
+        <button
+          (click)="zenTheme.set('space')"
+          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5"
+          [ngClass]="zenTheme() === 'space' 
+            ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.3)]' 
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
+        >
+          <span>🌌</span>
+          <span>Espacio</span>
+        </button>
+      </div>
+
+      <!-- Exit Zen Button -->
+      <button
+        (click)="toggleZenMode(false)"
+        class="flex items-center space-x-2 px-4 py-2 rounded-2xl bg-black/40 hover:bg-white/20 backdrop-blur-xl border border-white/15 text-white text-xs font-bold transition transform active:scale-95 shadow-lg"
+        title="Salir del modo inmersivo (Esc)"
+      >
+        <span>✕ Salir de Modo Zen</span>
+        <span class="text-[10px] font-mono opacity-70 px-1.5 py-0.5 rounded bg-white/10">ESC</span>
+      </button>
+    </div>
+
+    <!-- Center: Massive Digital Timer & Active Task & Quote -->
+    <div class="relative z-10 flex flex-col items-center justify-center space-y-7 text-center max-w-2xl mx-auto my-auto select-none">
+      <!-- Active Task Badge -->
+      <div class="space-y-2">
+        <span
+          class="text-xs uppercase font-black tracking-widest px-4 py-1.5 rounded-full border font-mono shadow-lg backdrop-blur-md"
+          [ngClass]="{
+            'bg-amber-950/70 border-amber-500/40 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.2)]': zenTheme() === 'library',
+            'bg-cyan-950/70 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.2)]': zenTheme() === 'rain',
+            'bg-pink-950/70 border-pink-500/40 text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.2)]': zenTheme() === 'lofi',
+            'bg-indigo-950/70 border-indigo-500/40 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.2)]': zenTheme() === 'space'
+          }"
+        >
+          {{ mode() === 'work' ? '⚡ TRABAJO PROFUNDO' : '🌿 DESCANSO ACTIVO' }}
+        </span>
+        <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2 truncate max-w-xl drop-shadow-md">
+          {{ currentTask()?.title || 'Sesión de Foco Universitario' }}
+        </h3>
+      </div>
+
+      <!-- Giant Digital Clock with High-Contrast Glowing Aura -->
+      <div class="relative flex items-center justify-center my-2">
+        <!-- Glowing Backdrop Circle -->
+        <div
+          class="absolute w-96 h-96 rounded-full blur-3xl opacity-35 pointer-events-none transition-colors duration-700"
+          [ngClass]="{
+            'bg-amber-500': zenTheme() === 'library',
+            'bg-cyan-500': zenTheme() === 'rain',
+            'bg-pink-500': zenTheme() === 'lofi',
+            'bg-indigo-500': zenTheme() === 'space'
+          }"
+        ></div>
+
+        <!-- Timer Digital Text with Vibrant High Contrast -->
+        <div
+          class="font-mono text-8xl sm:text-[10rem] font-black tracking-tight select-none leading-none z-10 transition-colors duration-500"
+          [ngClass]="{
+            'text-amber-100 drop-shadow-[0_0_60px_rgba(251,191,36,0.7)]': zenTheme() === 'library',
+            'text-cyan-100 drop-shadow-[0_0_60px_rgba(6,182,212,0.8)]': zenTheme() === 'rain',
+            'text-pink-100 drop-shadow-[0_0_60px_rgba(236,72,153,0.8)]': zenTheme() === 'lofi',
+            'text-white drop-shadow-[0_0_60px_rgba(165,180,252,0.8)]': zenTheme() === 'space'
+          }"
+        >
+          {{ timeFormatted() }}
+        </div>
+      </div>
+
+      <!-- Zen Neuroquote -->
+      <p
+        class="text-sm sm:text-base font-medium italic max-w-xl leading-relaxed px-4 transition-colors duration-500"
+        [ngClass]="{
+          'text-amber-200/90': zenTheme() === 'library',
+          'text-cyan-100/90': zenTheme() === 'rain',
+          'text-pink-100/90': zenTheme() === 'lofi',
+          'text-indigo-100/90': zenTheme() === 'space'
+        }"
+      >
+        "{{ currentQuote() }}"
+      </p>
+
+      <!-- Main Controls in Zen Mode -->
+      <div class="flex items-center space-x-4 pt-2">
+        <button
+          (click)="handleTogglePlay()"
+          class="px-9 py-4 rounded-3xl text-white font-extrabold text-base flex items-center space-x-3 transition transform active:scale-95 hover:scale-105"
+          [ngClass]="{
+            'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.5)]': zenTheme() === 'library',
+            'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-[0_0_30px_rgba(6,182,212,0.5)]': zenTheme() === 'rain',
+            'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 shadow-[0_0_30px_rgba(236,72,153,0.5)]': zenTheme() === 'lofi',
+            'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-[0_0_30px_rgba(99,102,241,0.5)]': zenTheme() === 'space'
+          }"
+        >
+          <app-icon [name]="isRunning() ? 'pause' : 'play'" class="w-6 h-6 fill-current"></app-icon>
+          <span>{{ isRunning() ? 'Pausar' : 'Iniciar Foco' }}</span>
+        </button>
+
+        <button
+          (click)="handleReset()"
+          class="p-4 rounded-3xl bg-black/40 hover:bg-white/20 border border-white/15 text-white transition transform active:scale-95 shadow-lg backdrop-blur-md"
+          title="Reiniciar temporizador"
+        >
+          <app-icon name="rotate-ccw" class="w-6 h-6"></app-icon>
+        </button>
+
+        <button
+          (click)="handleSkipPhase()"
+          class="p-4 rounded-3xl bg-black/40 hover:bg-white/20 border border-white/15 text-white transition transform active:scale-95 shadow-lg backdrop-blur-md"
+          title="Saltar a la siguiente fase"
+        >
+          <app-icon name="skip-forward" class="w-6 h-6"></app-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom: Sound Toggle -->
+    <div class="relative z-10 flex items-center justify-between text-xs text-slate-300 flex-wrap gap-2">
+      <div class="flex items-center space-x-2">
+        <app-icon name="volume-2" class="w-4 h-4 text-amber-400 dark:text-cyan-400"></app-icon>
+        <span>Sonido de Fondo:</span>
+        <select
+          [ngModel]="ambientSound()"
+          (ngModelChange)="ambientSound.set($event)"
+          class="px-3 py-1.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs font-semibold focus:outline-none backdrop-blur-md cursor-pointer"
+        >
+          <option value="off" class="text-slate-900">🔇 Sin sonido</option>
+          <option value="rain" class="text-slate-900">🌧️ Lluvia relajante</option>
+          <option value="waves" class="text-slate-900">🌊 Ondas binaurales</option>
+          <option value="whitenoise" class="text-slate-900">📻 Ruido blanco</option>
+        </select>
+      </div>
+
+      <span class="font-mono text-[11px] opacity-80">
+        Cronos Zen Mode • 100% Inmersión
+      </span>
+    </div>
+  </div>
+}

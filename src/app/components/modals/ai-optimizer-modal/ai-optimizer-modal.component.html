@@ -1,0 +1,299 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-8 transition-colors">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-xs">
+          <app-icon name="sparkles" class="w-5 h-5 text-amber-300 animate-spin-slow"></app-icon>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            Optimizador Inteligente de Horarios & Foco
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Valida en tiempo real que ningún bloque choque con clases ni con otras sesiones de estudio.
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-lg font-mono transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Configuration step -->
+    @if (!planResult()) {
+      <div class="space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Chronotype -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              Tu Cronotipo (Energía):
+            </label>
+            <select
+              [(ngModel)]="chronotype"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-indigo-600"
+            >
+              <option value="matutino">🌅 Matutino (Mayor foco en la mañana)</option>
+              <option value="intermedio">☀️ Intermedio / Tarde (14:00 - 19:00)</option>
+              <option value="nocturno">🌙 Nocturno (Mayor foco en la noche)</option>
+            </select>
+          </div>
+
+          <!-- Target Hours -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              Meta de Estudio Diario:
+            </label>
+            <select
+              [(ngModel)]="dailyHours"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-indigo-600"
+            >
+              <option [value]="2">2 horas / día (Ligero)</option>
+              <option [value]="3">3 horas / día (Estándar)</option>
+              <option [value]="4">4 horas / día (Intensivo)</option>
+              <option [value]="5">5+ horas / día (Élite)</option>
+            </select>
+          </div>
+
+          <!-- Preferred Technique -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              Técnica de Productividad:
+            </label>
+            <select
+              [(ngModel)]="preferredMethod"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-indigo-600"
+            >
+              <option value="Pomodoro 25/5">Pomodoro 25/5</option>
+              <option value="Pomodoro 50/10">Foco Profundo 50/10</option>
+              <option value="Regla 52/17">Regla 52/17 (Ultradiano)</option>
+              <option value="Active Recall & Spaced Repetition">Active Recall & Spaced Repetition</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Context Summary & Integrity Guarantee -->
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-indigo-700 dark:text-indigo-400 block uppercase tracking-wider text-[11px]">
+              🔒 Regla de Integridad de Horario:
+            </span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Clases Institucionales Fijas Protegidas
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+            <span>📚 {{ state.courses().length }} Materias obligatorias</span>
+            <span>📝 {{ state.upcomingExamsCount() }} Exámenes a preparar</span>
+            <span>✅ {{ state.pendingTasksCount() }} Entregas activas</span>
+          </div>
+        </div>
+
+        <button
+          (click)="handleRunOptimizer()"
+          [disabled]="isLoading()"
+          class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-xs flex items-center justify-center space-x-2 transition transform active:scale-95 disabled:opacity-50"
+        >
+          <app-icon name="sparkles" class="w-4 h-4 text-amber-300 animate-spin-slow"></app-icon>
+          <span>{{ isLoading() ? 'Calculando Huecos Libres y Optimizando con IA...' : 'Generar Plan Semanal Anti-Choques' }}</span>
+        </button>
+      </div>
+    }
+
+    <!-- Plan Result View -->
+    @if (planResult(); as plan) {
+      <div class="space-y-5 animate-in fade-in duration-200">
+        <!-- Integrity Status Alert Banner -->
+        @if (totalConflictsCount() > 0) {
+          <div class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 space-y-2 text-xs">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center space-x-2 text-rose-900 dark:text-rose-200 font-bold">
+                <app-icon name="alert-triangle" class="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0 animate-bounce"></app-icon>
+                <span>¡Atención! Hay {{ totalConflictsCount() }} bloque(s) que chocan con clases u otras secciones.</span>
+              </div>
+              <button
+                (click)="autoResolveAllConflicts()"
+                class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow-xs flex items-center space-x-1.5 transition transform active:scale-95"
+              >
+                <app-icon name="sparkles" class="w-3.5 h-3.5"></app-icon>
+                <span>Auto-Resolver Todos los Choques ✨</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-600 dark:text-slate-400">
+              No se permitirá aplicar el horario mientras existan choques. Puedes ajustar el día y la hora de cada sesión directamente en la lista inferior.
+            </p>
+          </div>
+        } @else {
+          <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-1.5 text-xs text-emerald-950 dark:text-emerald-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2 font-bold">
+                <app-icon name="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></app-icon>
+                <span>🛡️ Garantía de 0 Choques: Todos los bloques están en huecos 100% libres.</span>
+              </div>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-extrabold font-mono">
+                {{ plan.productivityScoreForecast || 94 }} pts
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">{{ plan.summary }}</p>
+          </div>
+        }
+
+        <!-- Weekly tips -->
+        @if (plan.weeklyTips && plan.weeklyTips.length > 0) {
+          <div class="space-y-1.5">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              Consejos Estratégicos para esta Semana:
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              @for (tip of plan.weeklyTips; track $index) {
+                <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300">
+                  💡 {{ tip }}
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Editable Proposed blocks list with real-time conflict diagnosis -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
+              Bloques Propuestos ({{ editableBlocks().length }}) — Edición y Ajuste Inmediato:
+            </span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">
+              Cambia el día u hora si deseas reacomodar una sesión
+            </span>
+          </div>
+
+          <div class="max-h-72 overflow-y-auto space-y-3 pr-1">
+            @for (b of editableBlocks(); track $index) {
+              <div
+                class="p-4 rounded-2xl border text-xs transition-colors space-y-3"
+                [ngClass]="b.conflictError 
+                  ? 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80' 
+                  : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'"
+              >
+                <!-- Title & info -->
+                <div class="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <span class="font-extrabold text-slate-900 dark:text-white">{{ b.activityTitle }}</span>
+                      <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold">
+                        {{ b.courseName }}
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {{ b.reason }}
+                    </p>
+                  </div>
+
+                  <!-- Quick Fix Button -->
+                  @if (b.conflictError) {
+                    <button
+                      (click)="autoFindFreeSlotForBlock($index)"
+                      class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] shadow-2xs flex items-center space-x-1 transition"
+                      title="Encontrar automáticamente el hueco libre más cercano para esta sesión"
+                    >
+                      <app-icon name="sparkles" class="w-3 h-3"></app-icon>
+                      <span>Mover a Hueco Libre</span>
+                    </button>
+                  }
+                </div>
+
+                <!-- Live Inputs Controls Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <!-- Day selector -->
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Día de la semana:</label>
+                    <select
+                      [(ngModel)]="b.dayOfWeek"
+                      (ngModelChange)="onBlockChange($index)"
+                      class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none"
+                    >
+                      <option [value]="1">Lunes</option>
+                      <option [value]="2">Martes</option>
+                      <option [value]="3">Miércoles</option>
+                      <option [value]="4">Jueves</option>
+                      <option [value]="5">Viernes</option>
+                      <option [value]="6">Sábado</option>
+                      <option [value]="0">Domingo</option>
+                    </select>
+                  </div>
+
+                  <!-- Start Time -->
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Hora Inicio:</label>
+                    <input
+                      type="time"
+                      [(ngModel)]="b.startTime"
+                      (ngModelChange)="onBlockChange($index)"
+                      class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono font-semibold focus:outline-none"
+                    />
+                  </div>
+
+                  <!-- End Time -->
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Hora Fin:</label>
+                    <input
+                      type="time"
+                      [(ngModel)]="b.endTime"
+                      (ngModelChange)="onBlockChange($index)"
+                      class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <!-- Conflict Warning / Free Status Banner -->
+                @if (b.conflictError) {
+                  <div class="p-2.5 rounded-xl bg-rose-100/80 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 font-semibold text-[11px] flex items-start space-x-2">
+                    <app-icon name="alert-triangle" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5"></app-icon>
+                    <span><strong>Choque de horario:</strong> {{ b.conflictError }}</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center space-x-1.5 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+                    <app-icon name="check" class="w-3 h-3 text-emerald-600 dark:text-emerald-400"></app-icon>
+                    <span>Espacio verificado: Hueco 100% disponible sin colisiones</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-2 flex-wrap gap-2">
+          <button
+            (click)="resetPlan()"
+            class="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition"
+          >
+            ← Volver a configurar
+          </button>
+
+          <div class="flex items-center space-x-3">
+            @if (totalConflictsCount() > 0) {
+              <span class="text-xs font-bold text-rose-600 dark:text-rose-400">
+                ⚠️ Resuelve los {{ totalConflictsCount() }} choques para continuar
+              </span>
+            }
+
+            <button
+              (click)="handleApplyToSchedule()"
+              [disabled]="totalConflictsCount() > 0"
+              class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center space-x-2 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              [title]="totalConflictsCount() > 0 ? 'No se puede aplicar mientras existan choques de horario' : 'Aplicar plan al horario semanal'"
+            >
+              <app-icon [name]="totalConflictsCount() > 0 ? 'alert-triangle' : 'check-circle-2'" class="w-4 h-4"></app-icon>
+              <span>{{ totalConflictsCount() > 0 ? 'Choques Pendientes' : 'Aceptar y Aplicar al Horario Semanal' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+
+

@@ -1,0 +1,325 @@
+<div class="space-y-6 pb-12">
+  <!-- Header with Switcher -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+    <div>
+      <div class="flex items-center space-x-2">
+        <app-icon name="graduation-cap" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+          Control de Clases & Exámenes
+        </h2>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        Revisa tus cursos matriculados y diseña planes de Spaced Repetition para tus exámenes.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- Tab Switcher -->
+      <div class="flex items-center p-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+        <button
+          (click)="activeTab.set('exams')"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+          [ngClass]="activeTab() === 'exams' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <app-icon name="calendar" class="w-3.5 h-3.5"></app-icon>
+          <span>Exámenes ({{ state.exams().length }})</span>
+        </button>
+        <button
+          (click)="activeTab.set('courses')"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+          [ngClass]="activeTab() === 'courses' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <app-icon name="book-open" class="w-3.5 h-3.5"></app-icon>
+          <span>Materias / Cursos ({{ state.courses().length }})</span>
+        </button>
+      </div>
+
+      <button
+        (click)="state.openFlashcards()"
+        class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+        title="Generar flashcards interactivas y quiz con Inteligencia Artificial"
+      >
+        <app-icon name="sparkles" class="w-4 h-4 text-amber-300"></app-icon>
+        <span>Flashcards & Quiz IA</span>
+      </button>
+
+      <button
+        (click)="state.isQuickAddOpen.set(true)"
+        class="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+      >
+        <app-icon name="plus" class="w-4 h-4"></app-icon>
+        <span>Agregar {{ activeTab() === 'exams' ? 'Examen' : 'Materia' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Content based on Active Tab -->
+  @if (activeTab() === 'exams') {
+    <!-- EXAMS VIEW -->
+    <div class="space-y-4">
+      @if (state.exams().length === 0) {
+        <div class="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xs">
+          <app-icon name="graduation-cap" class="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2"></app-icon>
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            No tienes exámenes registrados por ahora.
+          </p>
+          <button
+            (click)="state.isQuickAddOpen.set(true)"
+            class="mt-3 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center space-x-1.5 shadow-xs"
+          >
+            <app-icon name="plus" class="w-4 h-4"></app-icon>
+            <span>Registrar nuevo examen</span>
+          </button>
+        </div>
+      } @else {
+        @for (exam of state.exams(); track exam.id) {
+          @let course = getCourseForExam(exam.courseId);
+          @let isExpanded = expandedExamId() === exam.id;
+          @let isGenerating = loadingAiExamId() === exam.id;
+          @let countdown = getDaysUntilExam(exam.date);
+
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition shadow-xs">
+            <!-- Main Exam Header Row -->
+            <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-start space-x-4">
+                <!-- Countdown badge -->
+                <div
+                  class="w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-bold text-center border flex-shrink-0"
+                  [ngClass]="countdown.includes('HOY') || countdown.includes('Mañana') ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 animate-pulse' : 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400'"
+                >
+                  <span class="text-[10px] font-mono uppercase tracking-wider">Faltan</span>
+                  <span class="text-sm font-extrabold">{{ countdown }}</span>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ exam.title }}</h3>
+                    <span
+                      class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                      [style.backgroundColor]="course ? course.color + '20' : '#f1f5f9'"
+                      [style.color]="course ? course.color : '#475569'"
+                    >
+                      {{ course?.name || 'General' }}
+                    </span>
+                    <span
+                      class="text-[9px] uppercase px-1.5 py-0.5 rounded-md font-bold"
+                      [ngClass]="exam.difficulty === 'alta' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800' : 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'"
+                    >
+                      Dificultad {{ exam.difficulty }}
+                    </span>
+                  </div>
+
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ exam.topics || 'Temas del examen por definir.' }}
+                  </p>
+
+                  <div class="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex-wrap font-mono">
+                    <span>📅 Fecha: {{ exam.date }}</span>
+                    <span>⏰ Hora: {{ exam.time || '09:00' }}</span>
+                    @if (exam.classroom) {
+                      <span>📍 Aula: {{ exam.classroom }}</span>
+                    }
+                    @if (exam.weightPercentage) {
+                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold font-sans">
+                        📊 Ponderación: {{ exam.weightPercentage }}%
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center space-x-2 self-end sm:self-center">
+                <!-- AI Spaced Repetition Plan Trigger -->
+                <button
+                  (click)="handleGenerateAiExamPlan(exam)"
+                  [disabled]="isGenerating"
+                  class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center space-x-1.5 transition shadow-xs disabled:opacity-50"
+                  title="Generar plan de estudio escalonado con IA"
+                >
+                  <app-icon name="brain" class="w-3.5 h-3.5 text-amber-300"></app-icon>
+                  <span>
+                    {{ isGenerating ? 'Generando Plan...' : (exam.aiBreakdown ? 'Actualizar Plan IA' : 'Plan de Estudio IA') }}
+                  </span>
+                </button>
+
+                <!-- Google Calendar Link -->
+                <button
+                  (click)="handleExportExamToGoogleCal(exam)"
+                  class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition"
+                  title="Añadir a Google Calendar"
+                >
+                  <app-icon name="external-link" class="w-4 h-4"></app-icon>
+                </button>
+
+                <!-- Expand Button -->
+                @if (exam.aiBreakdown) {
+                  <button
+                    (click)="toggleExpandExam(exam.id)"
+                    class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    title="Ver u ocultar desglose de estudio"
+                  >
+                    @if (isExpanded) {
+                      <app-icon name="chevron-up" class="w-4 h-4"></app-icon>
+                    } @else {
+                      <app-icon name="chevron-down" class="w-4 h-4"></app-icon>
+                    }
+                  </button>
+                }
+
+                <!-- Delete -->
+                <button
+                  (click)="state.deleteExam(exam.id)"
+                  class="p-2 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  title="Eliminar examen"
+                >
+                  <app-icon name="trash-2" class="w-4 h-4"></app-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- AI Spaced Repetition Breakdown Content -->
+            @if (exam.aiBreakdown && (isExpanded || isGenerating)) {
+              <div class="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 p-5 space-y-4">
+                <div class="flex items-start space-x-2 p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-800 dark:text-indigo-300">
+                  <app-icon name="sparkles" class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"></app-icon>
+                  <div>
+                    <strong class="text-slate-900 dark:text-white">Estrategia Recomendada:</strong>
+                    {{ exam.aiBreakdown.studyStrategy }} (~{{ exam.aiBreakdown.estimatedTotalHours }} horas sugeridas totales)
+                  </div>
+                </div>
+
+                <!-- Milestones timeline -->
+                <div class="space-y-3">
+                  <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Cronograma de Repaso Escalonado:
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    @for (m of exam.aiBreakdown.milestones; track $index) {
+                      <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 shadow-2xs">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                            {{ m.dayOffsetBeforeExam }} Días Antes
+                          </span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                            ~{{ m.durationMinutes }} min
+                          </span>
+                        </div>
+                        <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ m.title }}</h5>
+                        <p class="text-[10px] text-indigo-600 dark:text-indigo-400">
+                          Método: {{ m.recommendedMethod }}
+                        </p>
+                        <ul class="text-[11px] text-slate-500 dark:text-slate-400 list-disc list-inside space-y-0.5">
+                          @for (t of m.tasks; track $index) {
+                            <li>{{ t }}</li>
+                          }
+                        </ul>
+                        @if (m.selfAssessmentQuestion) {
+                          <p class="text-[10px] text-slate-400 dark:text-slate-500 italic pt-1 border-t border-slate-100 dark:border-slate-800">
+                            ❓ {{ m.selfAssessmentQuestion }}
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Quick checkpoints -->
+                @if (exam.aiBreakdown.quickCheckpoints && exam.aiBreakdown.quickCheckpoints.length > 0) {
+                  <div class="pt-2">
+                    <h5 class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">
+                      Checkpoints Críticos de Autoevaluación:
+                    </h5>
+                    <div class="flex flex-wrap gap-2">
+                      @for (cp of exam.aiBreakdown.quickCheckpoints; track $index) {
+                        <span class="text-[11px] px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center space-x-1 shadow-2xs">
+                          <app-icon name="check-circle-2" class="w-3 h-3 text-emerald-600 dark:text-emerald-400"></app-icon>
+                          <span>{{ cp }}</span>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <!-- COURSES VIEW -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for (course of state.courses(); track course.id) {
+        <div
+          class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-xs space-y-4"
+          [style.borderLeftColor]="course.color"
+          [style.borderLeftWidth]="'5px'"
+        >
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  {{ course.code }}
+                </span>
+                @if (course.credits) {
+                  <span class="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    {{ course.credits }} créditos
+                  </span>
+                }
+              </div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mt-0.5">{{ course.name }}</h3>
+              @if (course.professor) {
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Prof: {{ course.professor }}</p>
+              }
+            </div>
+
+            <button
+              (click)="state.deleteCourse(course.id)"
+              class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+              title="Eliminar materia"
+            >
+              <app-icon name="trash-2" class="w-4 h-4"></app-icon>
+            </button>
+          </div>
+
+          <!-- Recurring Schedules -->
+          <div class="space-y-1.5">
+            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Horarios Semanales:
+            </span>
+            <div class="flex flex-wrap gap-1.5">
+              @for (slot of course.timeSlots; track slot.id) {
+                <span class="text-xs px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono flex items-center space-x-1">
+                  <app-icon name="clock" class="w-3 h-3 text-indigo-600 dark:text-indigo-400"></app-icon>
+                  <span>
+                    {{ getDayName(slot.dayOfWeek) }}: {{ slot.startTime }} - {{ slot.endTime }}
+                  </span>
+                  @if (slot.room) {
+                    <span class="text-slate-400 dark:text-slate-500">({{ slot.room }})</span>
+                  }
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Syllabus Topics -->
+          @if (course.syllabusTopics && course.syllabusTopics.length > 0) {
+            <div class="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Temario Clave:
+              </span>
+              <div class="flex flex-wrap gap-1">
+                @for (t of course.syllabusTopics; track $index) {
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    {{ t }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+

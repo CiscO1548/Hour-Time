@@ -1,0 +1,154 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-8 transition-colors">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-xs">
+          <app-icon name="brain" class="w-6 h-6 text-amber-300"></app-icon>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Adaptación Cognitiva de Rutinas & Picos de Productividad
+            </h3>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+              Neuro-Optimización
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            El agente analiza en qué momentos rindes mejor y coloca las tareas de alta exigencia mental (Programación, Análisis, Cálculo) en tus picos de máxima energía.
+          </p>
+        </div>
+      </div>
+
+      <button
+        (click)="close()"
+        class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-lg font-mono transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="p-12 text-center space-y-3">
+        <app-icon name="sparkles" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin mx-auto"></app-icon>
+        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Analizando tus correlaciones de energía y foco por materia...</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Mapeando picos de dopamina y exigencia cognitiva para tu horario futuro.</p>
+      </div>
+    }
+
+    <!-- Result View -->
+    @if (adaptationResult(); as result) {
+      <div class="space-y-5 animate-in fade-in duration-200">
+        <!-- Summary Box -->
+        <div class="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-indigo-950 dark:text-indigo-300 uppercase tracking-wider">
+              Diagnóstico de Rendimiento Biológico
+            </span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">
+              ⚡ +{{ result.estimatedFocusGainPercentage }}% Ganancia de Enfoque Estimada
+            </span>
+          </div>
+          <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{{ result.overallCognitiveSummary }}</p>
+        </div>
+
+        <!-- 1. Detected Peak Patterns -->
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
+            Picos de Productividad Detectados por Materia / Categoría:
+          </span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            @for (peak of result.detectedPeaks; track peak.subjectOrCategory) {
+              <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 text-xs shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900 dark:text-white truncate">{{ peak.subjectOrCategory }}</span>
+                  <span
+                    class="text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold"
+                    [ngClass]="peak.cognitiveDemand === 'alta' ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300' : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300'"
+                  >
+                    Exigencia {{ peak.cognitiveDemand }}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-indigo-700 dark:text-indigo-400 font-bold">
+                    🌅 {{ peak.bestTimeOfDay === 'mañana' ? 'Pico Matutino' : 'Pico Vespertino' }}
+                  </span>
+                  <span class="font-mono text-slate-500 dark:text-slate-400">{{ peak.bestTimeRange }}</span>
+                </div>
+
+                <p class="text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {{ peak.insightExplanation }}
+                </p>
+
+                <div class="pt-1.5 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-[10px]">
+                  <span class="text-amber-600 dark:text-amber-400 font-bold">Promedio: {{ peak.avgEnergyRating }} / 5 ⭐</span>
+                  <span class="text-emerald-700 dark:text-emerald-400 font-bold">+{{ peak.efficiencyBoostPercentage }}% Eficiencia</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 2. Proposed Future Schedule Adaptations -->
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
+            Reorganización Propuesta para Tareas de Alta Exigencia Cognitiva:
+          </span>
+          <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+            @for (prop of result.adaptedProposals; track prop.blockId) {
+              <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 text-xs shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-bold text-slate-900 dark:text-white">{{ prop.activityTitle }}</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-[11px] block">Materia: {{ prop.courseName }}</span>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold">
+                    Alta Exigencia Cognitiva
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                  <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                    <span class="font-semibold block text-slate-600 dark:text-slate-300">Horario Anterior (Subóptimo):</span>
+                    <span>{{ prop.oldSlot }}</span>
+                  </div>
+
+                  <div class="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold">
+                    <span class="font-bold block text-indigo-700 dark:text-indigo-300">Horario Adaptado al Pico:</span>
+                    <span>{{ prop.newSlot }}</span>
+                  </div>
+                </div>
+
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                  💡 {{ prop.reason }}
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-2">
+          <button
+            (click)="handleRunCognitiveAnalysis()"
+            class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition"
+          >
+            🔄 Re-calcular análisis
+          </button>
+
+          <button
+            (click)="handleApplyAdaptedRoutine()"
+            class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs flex items-center space-x-2 transition transform active:scale-95"
+          >
+            <app-icon name="check-circle-2" class="w-4 h-4"></app-icon>
+            <span>Aplicar Rutina Adaptada a Mis Picos de Energía</span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+

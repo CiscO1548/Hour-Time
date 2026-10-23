@@ -1,0 +1,77 @@
+<!-- Floating PiP Widget -->
+@if (state.isFloatingWidgetOpen()) {
+  <div class="fixed bottom-6 right-6 z-50 shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-5 select-none">
+    <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl p-4 text-slate-900 dark:text-white shadow-2xl space-y-3"
+         [ngClass]="isCollapsed() ? 'w-48' : 'w-72'">
+      <!-- Widget Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full"
+                [ngClass]="mode() === 'work' ? 'bg-amber-500 animate-ping' : 'bg-emerald-500 animate-pulse'"></span>
+          <span class="text-[11px] font-bold uppercase tracking-wider font-mono opacity-80">
+            {{ mode() === 'work' ? '⚡ Foco' : '🌿 Pausa' }}
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-1">
+          <button
+            (click)="toggleCollapse()"
+            class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs"
+            title="Minimizar / Expandir"
+          >
+            {{ isCollapsed() ? '▲' : '▼' }}
+          </button>
+          <button
+            (click)="close()"
+            class="p-1 rounded-lg text-slate-400 hover:text-rose-500 text-xs"
+            title="Cerrar widget flotante"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Display -->
+      <div class="flex items-center justify-between">
+        <div (click)="goToPomodoroTab()" class="cursor-pointer">
+          <div class="font-mono text-2xl sm:text-3xl font-black tracking-tight"
+               [ngClass]="mode() === 'work' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'">
+            {{ timeFormatted() }}
+          </div>
+          @if (!isCollapsed()) {
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[160px] mt-0.5">
+              {{ taskTitle() }}
+            </p>
+          }
+        </div>
+
+        <!-- Quick Play Button -->
+        <button
+          (click)="togglePlay()"
+          class="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md transition transform active:scale-90"
+          [ngClass]="mode() === 'work' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'"
+        >
+          <app-icon [name]="isRunning() ? 'pause' : 'play'" class="w-4 h-4 fill-current"></app-icon>
+        </button>
+      </div>
+
+      @if (!isCollapsed()) {
+        <!-- Actions footer -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+          <button
+            (click)="goToPomodoroTab()"
+            class="text-indigo-600 dark:text-indigo-400 hover:underline font-bold"
+          >
+            Abrir Pantalla Completa →
+          </button>
+          <button
+            (click)="state.toggleZenMode(true)"
+            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium"
+          >
+            🌌 Modo Zen
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

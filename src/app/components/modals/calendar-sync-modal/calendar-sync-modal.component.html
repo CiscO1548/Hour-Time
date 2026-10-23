@@ -1,0 +1,94 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl p-6 sm:p-7 shadow-2xl space-y-6 my-8 transition-colors">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <app-icon name="calendar" class="w-5 h-5"></app-icon>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            Sincronización & Respaldo de Calendarios
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Lleva tus clases, exámenes y bloques a tu app de calendario favorita.
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-lg font-mono transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- 1. ICS Export -->
+    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3">
+      <div class="flex items-start justify-between">
+        <div>
+          <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            Archivo Universal iCalendar (.ics)
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Compatible con Google Calendar, Apple Calendar (iOS/macOS), Microsoft Outlook y Notion Calendar.
+          </p>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-mono font-bold">
+          .ICS
+        </span>
+      </div>
+
+      <button
+        (click)="handleDownloadIcs()"
+        class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center space-x-2 transition shadow-xs"
+      >
+        <app-icon name="download" class="w-4 h-4"></app-icon>
+        <span>Descargar Horario Completo (.ics)</span>
+      </button>
+    </div>
+
+    <!-- 2. Google Calendar Instructions -->
+    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 text-xs text-slate-700 dark:text-slate-300">
+      <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
+        <app-icon name="external-link" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></app-icon>
+        <span>Cómo importar a Google Calendar:</span>
+      </h4>
+      <ol class="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-400 text-[11px] pl-1">
+        <li>Haz clic en el botón superior para descargar tu archivo <code class="text-slate-900 dark:text-slate-100 bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded font-mono">.ics</code>.</li>
+        <li>Abre Google Calendar en tu navegador.</li>
+        <li>En la esquina superior derecha, haz clic en <strong>Configuración ⚙️ &gt; Importar y Exportar</strong>.</li>
+        <li>Selecciona el archivo descargado y asígnalo a tu calendario universitario.</li>
+      </ol>
+    </div>
+
+    <!-- 3. JSON Backup & Restore -->
+    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3">
+      <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
+        <app-icon name="shield" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></app-icon>
+        <span>Copia de Seguridad & Restauración (JSON)</span>
+      </h4>
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          (click)="handleExportJson()"
+          class="py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-2xs"
+        >
+          <app-icon name="download" class="w-3.5 h-3.5 text-slate-500"></app-icon>
+          <span>Exportar JSON</span>
+        </button>
+
+        <label class="py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer text-center shadow-2xs">
+          <app-icon name="upload" class="w-3.5 h-3.5 text-slate-500"></app-icon>
+          <span>Importar JSON</span>
+          <input
+            type="file"
+            accept=".json"
+            (change)="handleFileImport($event)"
+            class="hidden"
+          />
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+

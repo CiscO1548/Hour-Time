@@ -1,0 +1,368 @@
+<div class="space-y-6 pb-12">
+  <!-- Header & Controls -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs transition-colors duration-200">
+    <div>
+      <div class="flex items-center space-x-2">
+        <app-icon name="check-square" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></app-icon>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+          Gestor de Tareas & Entregas Académicas
+        </h2>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        Organiza entregas, desglosa tareas con IA y prioriza usando la Matriz de Eisenhower.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- View mode toggle -->
+      <div class="flex items-center p-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+        <button
+          (click)="viewMode.set('list')"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+          [ngClass]="viewMode() === 'list' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <app-icon name="list" class="w-3.5 h-3.5"></app-icon>
+          <span>Lista</span>
+        </button>
+        <button
+          (click)="viewMode.set('eisenhower')"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+          [ngClass]="viewMode() === 'eisenhower' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <app-icon name="layout-grid" class="w-3.5 h-3.5"></app-icon>
+          <span>Matriz Eisenhower</span>
+        </button>
+      </div>
+
+      <!-- Multi-Agent Email Ingestion Button -->
+      <button
+        (click)="state.isMultiAgentHubOpen.set(true)"
+        class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 text-xs font-bold transition shadow-2xs"
+        title="Extraer tareas y exámenes automáticamente de correos con el sistema Multi-Agente"
+      >
+        <app-icon name="sparkles" class="w-4 h-4 text-amber-500"></app-icon>
+        <span>Extraer de Correo (Multi-Agente)</span>
+      </button>
+
+      <!-- New Task Button -->
+      <button
+        (click)="state.isQuickAddOpen.set(true)"
+        class="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+      >
+        <app-icon name="plus" class="w-4 h-4 stroke-[2.5]"></app-icon>
+        <span>Nueva Entrega / Tarea</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-3.5 text-xs shadow-xs transition-colors duration-200">
+    <!-- Search -->
+    <div class="relative">
+      <app-icon name="search" class="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5"></app-icon>
+      <input
+        type="text"
+        placeholder="Buscar por título o contenido..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs transition"
+      />
+    </div>
+
+    <!-- Course Filter -->
+    <select
+      [ngModel]="filterCourse()"
+      (ngModelChange)="filterCourse.set($event)"
+      class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 text-xs transition"
+    >
+      <option value="all">Todas las materias</option>
+      <option value="general">General / Personal</option>
+      @for (c of state.courses(); track c.id) {
+        <option [value]="c.id">
+          {{ c.name }} ({{ c.code }})
+        </option>
+      }
+    </select>
+
+    <!-- Priority Filter -->
+    <select
+      [ngModel]="filterPriority()"
+      (ngModelChange)="filterPriority.set($event)"
+      class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 text-xs transition"
+    >
+      <option value="all">Todas las prioridades</option>
+      <option value="alta">Prioridad Alta</option>
+      <option value="media">Prioridad Media</option>
+      <option value="baja">Prioridad Baja</option>
+    </select>
+
+    <!-- Status Filter -->
+    <select
+      [ngModel]="filterStatus()"
+      (ngModelChange)="filterStatus.set($event)"
+      class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 text-xs transition"
+    >
+      <option value="all">Todos los estados</option>
+      <option value="pending">Pendientes / En curso</option>
+      <option value="completed">Completadas</option>
+    </select>
+  </div>
+
+  <!-- Render based on view mode -->
+  @if (viewMode() === 'list') {
+    <!-- LIST VIEW -->
+    <div class="space-y-3">
+      @if (filteredTasks().length === 0) {
+        <div class="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xs">
+          <app-icon name="check-circle-2" class="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2"></app-icon>
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            No se encontraron tareas con los filtros actuales.
+          </p>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            Prueba cambiando los filtros o agrega una nueva tarea con el botón superior.
+          </p>
+        </div>
+      } @else {
+        @for (task of filteredTasks(); track task.id) {
+          @let course = getCourseForTask(task.courseId);
+          @let isExpanded = expandedTaskId() === task.id;
+          @let completedSubtasks = getCompletedSubtasksCount(task);
+          @let isBreaking = isAiBreakingDown() === task.id;
+
+          <div
+            class="bg-white dark:bg-slate-900 border rounded-3xl transition duration-150 overflow-hidden shadow-xs"
+            [ngClass]="task.status === 'completed' ? 'border-slate-200 dark:border-slate-800 opacity-60' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'"
+          >
+            <!-- Main Task Row -->
+            <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-start space-x-3.5 flex-1">
+                <!-- Checkbox -->
+                <button
+                  (click)="handleTaskComplete(task.id)"
+                  class="mt-0.5 w-5 h-5 rounded-lg border flex items-center justify-center transition flex-shrink-0"
+                  [ngClass]="task.status === 'completed' ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-slate-800'"
+                  [title]="task.status === 'completed' ? 'Marcar como pendiente' : 'Marcar como completada'"
+                >
+                  @if (task.status === 'completed') {
+                    <app-icon name="check-circle-2" class="w-4 h-4 text-white fill-current"></app-icon>
+                  }
+                </button>
+
+                <!-- Info -->
+                <div class="space-y-1 flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span
+                      class="text-sm font-bold"
+                      [ngClass]="task.status === 'completed' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'"
+                    >
+                      {{ task.title }}
+                    </span>
+
+                    <!-- Course badge -->
+                    <span
+                      class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                      [style.backgroundColor]="course ? course.color + '20' : '#f1f5f9'"
+                      [style.color]="course ? course.color : '#475569'"
+                    >
+                      {{ course?.code || 'General' }}
+                    </span>
+
+                    <!-- Priority badge -->
+                    <span
+                      class="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md font-bold"
+                      [ngClass]="task.priority === 'alta' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800' : task.priority === 'media' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                    >
+                      {{ task.priority }}
+                    </span>
+                  </div>
+
+                  @if (task.description) {
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {{ task.description }}
+                    </p>
+                  }
+
+                  <!-- Metadata row -->
+                  <div class="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500 flex-wrap pt-1">
+                    @if (task.dueDate) {
+                      <span class="flex items-center space-x-1 text-slate-600 dark:text-slate-300 font-mono">
+                        <app-icon name="clock" class="w-3 h-3 text-amber-500"></app-icon>
+                        <span>
+                          Vence: {{ task.dueDate }} {{ task.dueTime ? '(' + task.dueTime + ')' : '' }}
+                        </span>
+                      </span>
+                    }
+                    <span>Estimado: ~{{ task.estimatedMinutes || 45 }} min</span>
+
+                    @if (task.subtasks.length > 0) {
+                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold">
+                        Pasos: {{ completedSubtasks }}/{{ task.subtasks.length }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center space-x-2 self-end sm:self-center">
+                <!-- AI Breakdown Button -->
+                <button
+                  (click)="handleAiBreakdownTask(task)"
+                  [disabled]="isBreaking"
+                  class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold flex items-center space-x-1.5 transition disabled:opacity-50"
+                  title="Desglosar esta tarea en subtareas automáticas con IA"
+                >
+                  <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-500"></app-icon>
+                  <span>{{ isBreaking ? 'Desglosando...' : 'Desglosar IA' }}</span>
+                </button>
+
+                <!-- Start Focus Button -->
+                <button
+                  (click)="state.startFocusWithTask(task)"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center space-x-1.5 transition shadow-xs"
+                  title="Iniciar Pomodoro con esta tarea"
+                >
+                  <app-icon name="play" class="w-3 h-3 fill-current"></app-icon>
+                  <span>Foco</span>
+                </button>
+
+                <!-- Simulate 15-min warning button -->
+                <button
+                  (click)="state.triggerTestImminentAlert(task)"
+                  class="p-1.5 rounded-xl text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800 transition"
+                  title="Simular advertencia de 15 min y aplazar con IA"
+                >
+                  <app-icon name="clock" class="w-3.5 h-3.5"></app-icon>
+                </button>
+
+                <!-- Toggle Subtasks Expand -->
+                @if (task.subtasks.length > 0) {
+                  <button
+                    (click)="toggleExpandTask(task.id)"
+                    class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    title="Ver u ocultar subtareas"
+                  >
+                    @if (isExpanded) {
+                      <app-icon name="chevron-up" class="w-4 h-4"></app-icon>
+                    } @else {
+                      <app-icon name="chevron-down" class="w-4 h-4"></app-icon>
+                    }
+                  </button>
+                }
+
+                <!-- Delete -->
+                <button
+                  (click)="state.deleteTask(task.id)"
+                  class="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  title="Eliminar tarea"
+                >
+                  <app-icon name="trash-2" class="w-4 h-4"></app-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Expanded Subtasks & Tips -->
+            @if (isExpanded) {
+              <div class="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3">
+                @if (task.productivityTip) {
+                  <div class="flex items-start space-x-2 p-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-800 dark:text-indigo-300">
+                    <app-icon name="zap" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"></app-icon>
+                    <span>
+                      <strong>Consejo de Productividad IA:</strong> {{ task.productivityTip }}
+                    </span>
+                  </div>
+                }
+
+                <div class="space-y-2">
+                  <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Pasos de Acción:
+                  </h4>
+                  @for (subtask of task.subtasks; track subtask.id) {
+                    <div class="flex items-center space-x-2.5 text-xs text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        [checked]="subtask.completed"
+                        (change)="state.toggleSubtask(task.id, subtask.id)"
+                        class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-0 cursor-pointer"
+                      />
+                      <span [ngClass]="subtask.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''">
+                        {{ subtask.title }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <!-- EISENHOWER MATRIX VIEW -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for (quad of eisenhowerQuadrants; track quad.id) {
+        @let quadTasks = getTasksForQuadrant(quad.id);
+
+        <div
+          class="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs space-y-3 flex flex-col justify-between transition-colors"
+          [ngClass]="quad.border"
+        >
+          <div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                {{ quad.title }}
+              </h3>
+              <span
+                class="text-[10px] px-2 py-0.5 rounded-md font-bold border"
+                [ngClass]="quad.badgeBg"
+              >
+                {{ quadTasks.length }} {{ quadTasks.length === 1 ? 'tarea' : 'tareas' }}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{{ quad.subtitle }}</p>
+
+            <div class="mt-4 space-y-2 max-h-80 overflow-y-auto pr-1">
+              @if (quadTasks.length === 0) {
+                <p class="text-xs text-slate-400 dark:text-slate-500 italic py-4 text-center">
+                  Sin tareas en este cuadrante
+                </p>
+              } @else {
+                @for (task of quadTasks; track task.id) {
+                  <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition flex items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                      <button
+                        (click)="handleTaskComplete(task.id)"
+                        class="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                        [ngClass]="task.status === 'completed' ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'"
+                      >
+                        @if (task.status === 'completed') {
+                          <app-icon name="check-circle-2" class="w-3 h-3 text-white fill-current"></app-icon>
+                        }
+                      </button>
+                      <span
+                        class="text-xs truncate"
+                        [ngClass]="task.status === 'completed' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'"
+                      >
+                        {{ task.title }}
+                      </span>
+                    </div>
+
+                    <button
+                      (click)="state.startFocusWithTask(task)"
+                      class="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold flex items-center space-x-1 transition border border-indigo-200 dark:border-indigo-800"
+                      title="Iniciar foco"
+                    >
+                      <app-icon name="play" class="w-2.5 h-2.5 fill-current"></app-icon>
+                      <span>Foco</span>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+

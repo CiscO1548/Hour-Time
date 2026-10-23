@@ -1,0 +1,8 @@
+{
+  "name": "Cronos Academic & Task Manager",
+  "description": "Gestor académico y de tareas inteligentes con planificación por IA, optimización horaria (Pomodoro y Time Blocking), calendario de clases y entregas, y analíticas semanales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

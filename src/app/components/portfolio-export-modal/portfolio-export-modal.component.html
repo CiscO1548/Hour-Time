@@ -1,0 +1,144 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[92vh] shadow-2xl overflow-hidden transition-colors flex flex-col my-auto">
+    <!-- Header Modal Bar (Hidden on print) -->
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/60 no-print flex-shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          📊
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <span>Dossier y Portafolio Académico Oficial</span>
+            <span class="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+              PDF Ready
+            </span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Vista previa del informe consolidado de rendimiento, créditos y horas de foco
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button
+          (click)="printReport()"
+          class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center space-x-1.5"
+        >
+          <span>🖨️ Imprimir / Guardar PDF</span>
+        </button>
+        <button
+          (click)="close()"
+          class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Printable Document Body -->
+    <div class="p-6 sm:p-8 space-y-6 flex-1 overflow-y-auto bg-white text-slate-900 printable-area">
+      <!-- Institution / Student Title Block -->
+      <div class="border-b-2 border-slate-900 pb-4 flex items-start justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-widest text-indigo-600">
+            CRONOS ACADEMIC ENGINE • INFORME DE DESEMPEÑO
+          </span>
+          <h2 class="text-2xl font-black tracking-tight text-slate-900 mt-1">
+            Expediente de Progreso y Rendimiento Estudiantil
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Semestre Académico 2026-I • Fecha de Emisión: {{ currentDate }}
+          </p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs font-bold text-slate-900 font-mono">NIVEL {{ state.academicLevel() }}</div>
+          <div class="text-[11px] text-indigo-600 font-semibold">{{ state.academicTitle() }}</div>
+        </div>
+      </div>
+
+      <!-- KPI Executive Metrics Grid -->
+      <div class="grid grid-cols-4 gap-3 text-center">
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Créditos Totales</div>
+          <div class="text-2xl font-black font-mono text-slate-900 mt-1">{{ totalCredits() }}</div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Horas de Foco</div>
+          <div class="text-2xl font-black font-mono text-indigo-600 mt-1">{{ totalFocusHours() }}h</div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Tareas Resueltas</div>
+          <div class="text-2xl font-black font-mono text-emerald-600 mt-1">{{ totalCompletedTasks() }}</div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Racha Activa</div>
+          <div class="text-2xl font-black font-mono text-amber-600 mt-1">{{ state.preferences().studyStreakDays }} días</div>
+        </div>
+      </div>
+
+      <!-- Enrolled Courses & Schedule Summary -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b pb-1">
+          1. Asignaturas Matriculadas y Carga Lectiva
+        </h4>
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="border-b text-slate-500 font-mono text-[10px]">
+              <th class="py-2">Código</th>
+              <th class="py-2">Asignatura</th>
+              <th class="py-2">Docente</th>
+              <th class="py-2 text-center">Créditos</th>
+              <th class="py-2 text-right">Horario Semanal</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (course of state.courses(); track course.id) {
+              <tr>
+                <td class="py-2.5 font-mono font-bold">{{ course.code }}</td>
+                <td class="py-2.5 font-semibold text-slate-900">{{ course.name }}</td>
+                <td class="py-2.5 text-slate-600">{{ course.professor || '—' }}</td>
+                <td class="py-2.5 text-center font-mono">{{ course.credits || 4 }}</td>
+                <td class="py-2.5 text-right text-slate-500 font-mono text-[11px]">
+                  {{ course.timeSlots.length }} sesiones/sem
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Upcoming Exams & Milestones -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b pb-1">
+          2. Evaluaciones y Exámenes Programados
+        </h4>
+        <div class="grid grid-cols-2 gap-2.5">
+          @for (exam of state.exams(); track exam.id) {
+            <div class="p-3 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+              <div>
+                <div class="font-bold text-slate-900">{{ exam.title }}</div>
+                <div class="text-[10px] text-slate-500">Ponderación: {{ exam.weightPercentage || 25 }}%</div>
+              </div>
+              <span class="font-mono text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded">
+                {{ exam.date }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- AI Mentor Recommendation Signature -->
+      <div class="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-xs space-y-1.5 mt-6">
+        <div class="font-bold text-indigo-950 flex items-center space-x-1.5">
+          <span>🧠 Dictamen del Tutor de Inteligencia Artificial (Cronos AI)</span>
+        </div>
+        <p class="text-slate-700 text-[11px] leading-relaxed">
+          El estudiante demuestra un ritmo ultradiano equilibrado con alta adherencia a los bloques de estudio fijados. Se recomienda mantener las sesiones Pomodoro 50/10 para los temas de Cálculo Multivariable antes del Examen Parcial.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

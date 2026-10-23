@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Compilación y caché de Angular (lo que más suele inflar el repo)
+dist/
+build/
+out/
+.angular/
+coverage/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Configuración de editores
+.vscode/
+.idea/
+
+# Variables de entorno locales
+.env*
+!.env.example
+

@@ -1,0 +1,206 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[92vh] shadow-2xl overflow-hidden transition-colors flex flex-col my-auto">
+    <!-- Level Banner Header (Sticky top) -->
+    <div class="p-5 sm:p-6 bg-gradient-to-r from-amber-600 via-indigo-600 to-purple-700 text-white relative overflow-hidden flex-shrink-0">
+      <!-- Ambient Glow Shapes -->
+      <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+
+      <div class="flex items-start justify-between relative z-10">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl shadow-lg flex-shrink-0">
+            🎓
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-mono font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-white/20 border border-white/30 tracking-wider">
+                Nivel {{ state.academicLevel() }}
+              </span>
+              <span class="text-xs text-amber-200 font-semibold">
+                {{ state.academicTitle() }}
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-2xl font-black tracking-tight mt-1">
+              Árbol de Habilidades & Logros
+            </h3>
+            <p class="text-xs text-white/80 mt-0.5">
+              Gana XP completando sesiones de Pomodoro, simulacros de examen y entregas a tiempo.
+            </p>
+          </div>
+        </div>
+
+        <button
+          (click)="close()"
+          class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition text-sm font-bold flex-shrink-0"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- XP Progress Bar -->
+      <div class="mt-4 space-y-1.5 relative z-10">
+        <div class="flex justify-between text-xs font-bold font-mono">
+          <span>{{ state.totalXp() }} Total XP</span>
+          <span>Siguiente Nivel: {{ state.academicLevel() * 500 }} XP</span>
+        </div>
+        <div class="w-full h-2.5 rounded-full bg-black/30 overflow-hidden p-0.5 border border-white/20">
+          <div
+            class="h-full rounded-full bg-gradient-to-r from-amber-300 to-yellow-400 shadow-sm transition-all duration-500"
+            [style.width.%]="state.currentLevelProgress()"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs (Skill Tree vs Badges) -->
+    <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/60 flex-wrap gap-2 flex-shrink-0">
+      <div class="flex items-center space-x-2">
+        <button
+          (click)="activeTab.set('tree')"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition"
+          [ngClass]="activeTab() === 'tree'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        >
+          🌳 Árbol de Habilidades
+        </button>
+        <button
+          (click)="activeTab.set('achievements')"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5"
+          [ngClass]="activeTab() === 'achievements'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        >
+          <span>🏆 Medallas & Logros</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            {{ unlockedBadgesCount() }}/{{ state.achievements().length }}
+          </span>
+        </button>
+      </div>
+
+      @if (activeTab() === 'tree') {
+        <!-- Filter by Course -->
+        <select
+          [ngModel]="selectedCourseId()"
+          (ngModelChange)="selectedCourseId.set($event)"
+          class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none"
+        >
+          <option value="all">Todas las Materias</option>
+          @for (c of state.courses(); track c.id) {
+            <option [value]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <!-- Tab 1: Interactive Skill Nodes Grid -->
+    @if (activeTab() === 'tree') {
+      <div class="p-4 sm:p-6 flex-1 overflow-y-auto space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          @for (node of filteredSkills(); track node.id) {
+            <div
+              class="p-4 rounded-2xl border transition flex flex-col justify-between space-y-3"
+              [ngClass]="node.unlocked
+                ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800'
+                : 'bg-slate-50/60 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 opacity-75'"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center space-x-2.5">
+                  <div
+                    class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shadow-xs flex-shrink-0"
+                    [ngClass]="node.unlocked ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'"
+                  >
+                    {{ node.icon }}
+                  </div>
+                  <div>
+                    <h5 class="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                      {{ node.name }}
+                    </h5>
+                    <span class="text-[10px] text-slate-400 block mt-0.5">
+                      Nivel req: {{ node.levelRequired }} • Costo: {{ node.xpCost }} XP
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                  [ngClass]="node.unlocked
+                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'"
+                >
+                  {{ node.unlocked ? '✓ Desbloqueado' : '🔒 Bloqueado' }}
+                </span>
+              </div>
+
+              <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                {{ node.description }}
+              </p>
+
+              <!-- Mastery Bar or Unlock CTA -->
+              <div>
+                @if (node.unlocked) {
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                      <span>Maestría Conceptual</span>
+                      <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ node.masteryPercent }}%</span>
+                    </div>
+                    <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        class="h-full bg-indigo-600 rounded-full"
+                        [style.width.%]="node.masteryPercent"
+                      ></div>
+                    </div>
+                  </div>
+                } @else {
+                  <button
+                    (click)="unlockSkillNode(node)"
+                    class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition"
+                  >
+                    Desbloquear con {{ node.xpCost }} XP
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Tab 2: Achievements and Badges -->
+    @if (activeTab() === 'achievements') {
+      <div class="p-4 sm:p-6 flex-1 overflow-y-auto space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          @for (badge of state.achievements(); track badge.id) {
+            <div
+              class="p-3.5 rounded-2xl border flex items-center space-x-3.5 transition"
+              [ngClass]="badge.unlocked
+                ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/80 shadow-2xs'
+                : 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-800 opacity-60'"
+            >
+              <div class="text-3xl p-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex-shrink-0 shadow-xs">
+                {{ badge.icon }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <h5 class="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {{ badge.title }}
+                  </h5>
+                  <span class="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                    +{{ badge.xpReward }} XP
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+                  {{ badge.description }}
+                </p>
+                @if (badge.unlocked && badge.unlockedAt) {
+                  <span class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold block mt-1">
+                    ✓ Conseguido el {{ badge.unlockedAt }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

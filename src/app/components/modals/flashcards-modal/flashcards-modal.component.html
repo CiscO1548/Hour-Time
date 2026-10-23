@@ -1,0 +1,232 @@
+<div class="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl p-6 sm:p-8 shadow-2xl space-y-6 my-8 transition-colors">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center shadow-xs">
+          <app-icon name="sparkles" class="w-5 h-5 text-amber-300 animate-spin-slow"></app-icon>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Repaso Activo & Flashcards IA
+            </h3>
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300">
+              Active Recall 3D
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Fuerza la recuperación mental para consolidar memoria a largo plazo.
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-lg font-mono transition"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Course & Topic Selector Toolbar -->
+    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between flex-wrap gap-2 text-xs">
+      <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+        <label class="font-bold text-slate-600 dark:text-slate-400 uppercase text-[10px]">Materia:</label>
+        <select
+          [ngModel]="selectedCourse()"
+          (ngModelChange)="selectedCourse.set($event); loadDeck()"
+          class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none flex-1"
+        >
+          @for (c of state.courses(); track c.id) {
+            <option [value]="c.name">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+
+      <button
+        (click)="loadDeck()"
+        [disabled]="isGenerating()"
+        class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs flex items-center space-x-1.5 transition transform active:scale-95 disabled:opacity-50"
+      >
+        <app-icon name="sparkles" class="w-3.5 h-3.5 text-amber-300"></app-icon>
+        <span>{{ isGenerating() ? 'Generando...' : 'Generar Nuevo Mazo' }}</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    @if (isGenerating()) {
+      <div class="py-16 text-center space-y-4">
+        <div class="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin mx-auto"></div>
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300 animate-pulse">
+          El Tutor IA está creando preguntas pedagógicas de alta retención...
+        </p>
+      </div>
+    }
+
+    <!-- Completed Deck Results Screen -->
+    @if (!isGenerating() && isCompleted() && deck()) {
+      <div class="py-6 text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div class="w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-3xl shadow-sm">
+          🏆
+        </div>
+        <div class="space-y-1">
+          <h4 class="text-base font-extrabold text-slate-900 dark:text-white">
+            ¡Sesión de Active Recall Completada!
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Has repasado los {{ deck()?.cards?.length }} conceptos clave de {{ selectedCourse() }}.
+          </p>
+        </div>
+
+        <!-- Scores Breakdown -->
+        <div class="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+          <div class="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
+            <span class="text-lg font-mono font-extrabold text-emerald-700 dark:text-emerald-300 block">
+              {{ scores().easy }}
+            </span>
+            <span class="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase">Fácil</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800">
+            <span class="text-lg font-mono font-extrabold text-amber-700 dark:text-amber-300 block">
+              {{ scores().medium }}
+            </span>
+            <span class="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase">Regular</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800">
+            <span class="text-lg font-mono font-extrabold text-rose-700 dark:text-rose-300 block">
+              {{ scores().hard }}
+            </span>
+            <span class="text-[10px] font-bold text-rose-800 dark:text-rose-400 uppercase">A Repasar</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center space-x-3 pt-2">
+          <button
+            (click)="restartDeck()"
+            class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition"
+          >
+            Repetir Mazo 🔄
+          </button>
+          <button
+            (click)="close()"
+            class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition"
+          >
+            Finalizar Repaso
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Active Deck 3D Flashcard View -->
+    @if (!isGenerating() && !isCompleted() && deck(); as currentDeck) {
+      @if (currentDeck.cards[currentIndex()]; as card) {
+        <div class="space-y-4">
+          <!-- Progress bar -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <span>Tarjeta {{ currentIndex() + 1 }} de {{ currentDeck.cards.length }}</span>
+              <span class="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                {{ card.category || 'Teoría' }}
+              </span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div
+                class="bg-indigo-600 h-full transition-all duration-300 rounded-full"
+                [style.width.%]="((currentIndex() + 1) / currentDeck.cards.length) * 100"
+              ></div>
+            </div>
+          </div>
+
+          <!-- 3D Interactive Flip Card Container -->
+          <div
+            (click)="flipCard()"
+            class="perspective-1000 cursor-pointer select-none group min-h-[260px]"
+          >
+            <div
+              class="relative w-full min-h-[260px] rounded-3xl p-7 flex flex-col justify-between transition-all duration-500 transform-style-3d shadow-md hover:shadow-xl border"
+              [ngClass]="isFlipped() 
+                ? 'rotate-y-180 bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700/80 text-indigo-950 dark:text-white' 
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white'"
+            >
+              <!-- Front Side (Question) -->
+              @if (!isFlipped()) {
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                      PREGUNTA #{{ currentIndex() + 1 }}
+                    </span>
+                    <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center space-x-1">
+                      <span>Voltear para ver respuesta ↻</span>
+                    </span>
+                  </div>
+                  <h4 class="text-base sm:text-lg font-bold leading-relaxed pt-2">
+                    {{ card.question }}
+                  </h4>
+                </div>
+
+                <div class="pt-4 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800">
+                  <span>💡 Intenta formular la respuesta antes de voltear</span>
+                  <span class="text-indigo-600 dark:text-indigo-400 font-bold">Haz clic en la tarjeta</span>
+                </div>
+              }
+
+              <!-- Back Side (Answer & Explanation) -->
+              @if (isFlipped()) {
+                <div class="space-y-3 rotate-y-180">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      RESPUESTA
+                    </span>
+                    <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                      Voltear al frente ↺
+                    </span>
+                  </div>
+                  <p class="text-sm sm:text-base font-semibold leading-relaxed pt-1">
+                    {{ card.answer }}
+                  </p>
+                  @if (card.explanation) {
+                    <div class="p-3 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-indigo-200 dark:border-indigo-800/60 text-xs text-slate-600 dark:text-slate-300">
+                      <strong>Explicación clave:</strong> {{ card.explanation }}
+                    </div>
+                  }
+                </div>
+
+                <div class="pt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 border-t border-indigo-200 dark:border-indigo-900 rotate-y-180">
+                  <span>Evalúa tu nivel de dominio:</span>
+                  <span>👇 Selecciona una opción abajo</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Spaced Repetition Rating Buttons -->
+          <div class="pt-2 space-y-2">
+            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block text-center">
+              ¿Qué tan fácil fue recordar este concepto?
+            </span>
+            <div class="grid grid-cols-3 gap-2.5">
+              <button
+                (click)="rateCard('hard')"
+                class="py-2.5 px-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 font-bold text-xs flex items-center justify-center space-x-1.5 transition transform active:scale-95 shadow-2xs"
+              >
+                <span>🔴 Difícil (Repetir)</span>
+              </button>
+              <button
+                (click)="rateCard('medium')"
+                class="py-2.5 px-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-bold text-xs flex items-center justify-center space-x-1.5 transition transform active:scale-95 shadow-2xs"
+              >
+                <span>🟡 Regular (Duda)</span>
+              </button>
+              <button
+                (click)="rateCard('easy')"
+                class="py-2.5 px-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-bold text-xs flex items-center justify-center space-x-1.5 transition transform active:scale-95 shadow-2xs"
+              >
+                <span>🟢 Fácil (Dominado)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
